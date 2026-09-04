@@ -63,8 +63,22 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
   }
 
   const filename = `${kind}-${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.webp`;
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(path.join(UPLOAD_DIR, filename), output);
+
+  try {
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    await writeFile(path.join(UPLOAD_DIR, filename), output);
+  } catch (error) {
+    // Serverless hosts (Vercel, Lambda) give you a read-only filesystem, and
+    // anything written to /tmp disappears with the invocation. Say so plainly
+    // instead of surfacing an EROFS stack trace.
+    const code = (error as NodeJS.ErrnoException)?.code;
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
+      throw new UploadError(
+        "Auf diesem Server können keine Bilder gespeichert werden (schreibgeschütztes Dateisystem). Dafür wird ein Objektspeicher wie S3 benötigt."
+      );
+    }
+    throw error;
+  }
 
   return `${PUBLIC_PREFIX}/${filename}`;
 }

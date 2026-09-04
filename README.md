@@ -170,6 +170,19 @@ supports several menus per restaurant; the MVP UI exposes exactly one.
 - `visible` — hidden from the public menu entirely
 - `available` — shown, but marked "Heute nicht verfügbar"
 
+## Deployment
+
+The build never touches the database — `prisma generate` needs no connection and
+the Prisma client is created lazily on first query, so a host without
+`DATABASE_URL` at build time still builds. Four things do need attention:
+
+| | |
+| --- | --- |
+| **Database** | A managed Postgres (Neon, Supabase, Vercel Postgres). Use the **pooled** connection string: serverless functions open many short-lived connections and a direct one exhausts Postgres. |
+| **Migrations** | `prisma generate` in the build does *not* apply migrations. Run `npx prisma migrate deploy` against the production database on each release. |
+| **`NEXT_PUBLIC_APP_URL`** | **Leave it unset when hosting.** `getAppOrigin()` then derives the origin from the incoming request, so QR codes carry your real domain. Setting it to a localhost value prints QR codes that point at localhost. |
+| **Image uploads** | `src/lib/storage.ts` writes to `public/uploads`, which works on a normal server but **not on serverless hosts** — their filesystem is read-only and `/tmp` is per-invocation. The module is the single storage boundary; swapping in S3 or similar means reimplementing `saveImage`/`deleteImage` and nothing else. Until then uploads fail with a clear message rather than a stack trace. |
+
 ## Deliberately not built
 
 Ordering/payments, AI-generated allergens (a liability risk), multi-language,
