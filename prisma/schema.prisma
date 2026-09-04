@@ -1,0 +1,201 @@
+// ScaleSpeisekarte — multi-tenant digital menu platform
+// Tenant boundary: Restaurant. Every query in the admin surface is scoped by restaurantId.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+/// Presentation style of the public menu. MODERN is the scrolling digital list;
+/// CLASSIC is the typographic look of a printed menu. Same data, same speed.
+enum MenuTheme {
+  MODERN
+  CLASSIC
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String?
+  role         Role       @default(OWNER)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([restaurantId])
+}
+
+model Restaurant {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  logo        String?
+  coverImage  String?
+  description String?
+  address     String?
+  phone       String?
+  website     String?
+
+  // Branding. accentColor is the single colour the owner picks; foreground is derived
+  // from its luminance at render time, never stored, so it can never be unreadable.
+  primaryColor   String @default("#B4472A")
+  /// Reserved for future themes. Nothing renders it today: the guest menu derives
+  /// every supporting tone from primaryColor, so a second free colour would only
+  /// create contrast pairs we cannot guarantee. Kept because the spec asks for it.
+  secondaryColor String @default("#1C1917")
+  currency       String @default("EUR")
+  locale         String @default("de-DE")
+
+  /// Guest-menu presentation. Chosen by the owner, or proposed by the AI designer.
+  menuTheme MenuTheme @default(MODERN)
+  /// Key into FONT_PAIRS (src/lib/fonts.ts) — never a raw font name.
+  fontPair  String    @default("playfair-karla")
+
+  // Onboarding state — drives the post-signup wizard.
+  onboardedAt DateTime?
+
+  menus        Menu[]
+  users        User[]
+  openingHours OpeningHour[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OpeningHour {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int // 0 = Monday … 6 = Sunday
+  closed    Boolean @default(false)
+  opensAt   String? // "11:30"
+  closesAt  String? // "23:00"
+
+  @@unique([restaurantId, dayOfWeek])
+  @@index([restaurantId])
+}
+
+// Schema already supports several menus per restaurant; the MVP UI exposes exactly one.
+model Menu {
+  id           String     @id @default(cuid())
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  name        String  @default("Speisekarte")
+  published   Boolean @default(false)
+  isDefault   Boolean @default(true)
+  publishedAt DateTime?
+
+  categories Category[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([restaurantId])
+}
+
+model Category {
+  id     String @id @default(cuid())
+  menuId String
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  image       String?
+  icon        String? // lucide icon key, e.g. "utensils" — resolved to an SVG, never an emoji
+  sortOrder   Int     @default(0)
+  active      Boolean @default(true)
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([menuId, sortOrder])
+}
+
+model MenuItem {
+  id         String   @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  // Money is stored as integer minor units (cents). Never floats.
+  price    Int
+  oldPrice Int?
+
+  image     String?
+  sortOrder Int     @default(0)
+
+  // `visible` hides the item from the public menu entirely.
+  // `available` keeps it visible but marks it as sold out for today.
+  visible   Boolean @default(true)
+  available Boolean @default(true)
+  featured  Boolean @default(false)
+
+  // Marks seeded example data so the builder can flag it before publishing.
+  isExample Boolean @default(false)
+
+  allergens   MenuItemAllergen[]
+  dietaryTags MenuItemDietaryTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId, sortOrder])
+}
+
+// Global reference table (EU allergen codes A–R). Not tenant-scoped.
+model Allergen {
+  id        String @id @default(cuid())
+  code      String @unique
+  name      String
+  sortOrder Int    @default(0)
+
+  items MenuItemAllergen[]
+}
+
+model MenuItemAllergen {
+  menuItemId String
+  allergenId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, allergenId])
+  @@index([allergenId])
+}
+
+// Global reference table. Icons are lucide keys, resolved to SVG in the UI.
+model DietaryTag {
+  id        String @id @default(cuid())
+  key       String @unique
+  name      String
+  icon      String
+  color     String @default("#15803D")
+  sortOrder Int    @default(0)
+
+  items MenuItemDietaryTag[]
+}
+
+model MenuItemDietaryTag {
+  menuItemId   String
+  dietaryTagId String
+  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  dietaryTag   DietaryTag @relation(fields: [dietaryTagId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, dietaryTagId])
+  @@index([dietaryTagId])
+}

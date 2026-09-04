@@ -1,0 +1,419 @@
+/* ScaleSpeisekarte – Design Tokens
+ * Import in app/globals.css:
+ *   @import "tailwindcss";
+ *   @import "../design/theme.css";
+ * Tailwind v4, CSS-first. KEINE tailwind.config.js.
+ */
+
+/* ------------------------------------------------------------------ *
+ * 1) TENANT ACCENT – Runtime-Variablen (Fallback = Default-Brand)
+ *    Werden pro Restaurant per inline style auf <div data-guest-root>
+ *    ueberschrieben. Serverseitig berechnet -> kein FOUC.
+ * ------------------------------------------------------------------ */
+:root {
+  /* Standard-Schriftpaarung; pro Restaurant überschrieben. */
+  --font-display-active: var(--font-playfair), Georgia, serif;
+  --font-sans-active: var(--font-karla), ui-sans-serif, system-ui, sans-serif;
+
+  --accent: #b91c1c; /* Wirt-Akzent */
+  --accent-ink: #ffffff; /* auto: schwarz/weiss auf --accent */
+  --accent-text: #9a1616; /* accent, garantiert >=4.5:1 auf --color-guest-surface */
+  --accent-soft: #f7e9e7; /* 12% accent auf weiss */
+  --accent-border: #ecd3d0; /* 26% accent auf weiss */
+}
+
+/* ------------------------------------------------------------------ *
+ * 2) STATISCHE TOKENS
+ * ------------------------------------------------------------------ */
+@theme {
+  /* --- GAST: warmes Papier, akzentneutral (Wirt-Farbe darf jede sein) --- */
+  --color-guest-bg: #fbf9f6;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #f4f1ec; /* "heute aus", Skeleton, Fallback-Cover */
+  --color-guest-ink: #1a1614; /* 15.9:1 auf bg */
+  --color-guest-ink-2: #4a423c; /* Sekundaertext */
+  --color-guest-muted: #6b625c; /* 5.8:1 auf bg – Minimum fuer Body */
+  --color-guest-faint: #a2988f; /* nur Deko/Icons, NIE Text <16px */
+  --color-guest-border: #e8e2da;
+  --color-guest-border-strong: #d6cfc6;
+  --color-guest-veg: #2f7a4f; /* vegetarisch/vegan Pill */
+  --color-guest-veg-soft: #eaf4ee;
+  --color-guest-overlay: color-mix(in oklab, #1a1614 55%, transparent);
+
+  /* --- ADMIN: kuehles Zinc + Indigo. Bewusst anders als Gast. --- */
+  --color-admin-bg: #f6f7f9;
+  --color-admin-surface: #ffffff;
+  --color-admin-surface-2: #fafafb; /* Block-Header, Table-Head */
+  --color-admin-ink: #101828;
+  --color-admin-ink-2: #344054;
+  --color-admin-muted: #5b6472; /* 5.4:1 auf bg */
+  --color-admin-border: #e4e7ec;
+  --color-admin-border-strong: #d0d5dd;
+  --color-admin-primary: #4f46e5;
+  --color-admin-primary-hover: #4338ca;
+  --color-admin-primary-soft: #eef2ff;
+  --color-admin-primary-border: #c7d2fe;
+  --color-admin-danger: #d92d20;
+  --color-admin-danger-soft: #fef3f2;
+  --color-admin-success: #067647;
+  --color-admin-success-soft: #ecfdf3;
+  --color-admin-warning: #b54708;
+  --color-admin-warning-soft: #fffaeb;
+
+  /* --- TYPOGRAFIE (Defaults; die Paarung ist pro Restaurant überschreibbar,
+     siehe @theme inline weiter unten) --- */
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+
+  /* Buchschrift – nur Gast-Theme "classic". Playfair ist eine Didone und im
+     Fliesstext bei 17px auf dem Handy zu kontrastreich; Garamond ist eine
+     Textserif und traegt Name, Beschreibung und Preis in EINER Familie. */
+  --font-book: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+
+  /* Gast (mobil, Restaurantlicht -> grosszuegig) */
+  --text-hero: 2rem; /* 32px Restaurantname */
+  --text-hero--line-height: 2.25rem;
+  --text-hero--letter-spacing: -0.015em;
+  --text-cat: 1.375rem; /* 22px Kategorie */
+  --text-cat--line-height: 1.75rem;
+  --text-item: 1.125rem; /* 18px Gerichtname + Preis */
+  --text-item--line-height: 1.5rem;
+  --text-body: 1rem; /* 16px Beschreibung – HARTES Minimum */
+  --text-body--line-height: 1.4375rem;
+  --text-meta: 0.75rem; /* 12px Pills/Codes – nur Labels */
+  --text-meta--line-height: 1rem;
+  --text-meta--letter-spacing: 0.06em;
+
+  /* Admin */
+  --text-admin-h1: 1.5rem;
+  --text-admin-h1--line-height: 2rem;
+  --text-admin-h2: 1.0625rem;
+  --text-admin-h2--line-height: 1.5rem;
+  --text-admin-base: 0.875rem;
+  --text-admin-base--line-height: 1.25rem;
+  --text-admin-sm: 0.8125rem;
+  --text-admin-sm--line-height: 1.125rem;
+
+  /* --- RADIEN: Gast weich/organisch, Admin knapp/werkzeughaft --- */
+  --radius-guest-sm: 8px;
+  --radius-guest: 14px;
+  --radius-guest-lg: 18px;
+  --radius-guest-sheet: 22px;
+  --radius-admin-sm: 6px;
+  --radius-admin: 8px;
+  --radius-admin-lg: 12px;
+
+  /* --- SHADOWS: Gast fast schattenlos (Hairlines statt Elevation) --- */
+  --shadow-guest-card: 0 1px 2px rgb(26 22 20 / 0.05);
+  --shadow-guest-raise: 0 8px 24px -12px rgb(26 22 20 / 0.18);
+  --shadow-guest-nav: 0 1px 0 0 var(--color-guest-border);
+  --shadow-guest-sheet: 0 -12px 48px -8px rgb(26 22 20 / 0.25);
+  --shadow-admin-card: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-admin-pop: 0 12px 32px -8px rgb(16 24 40 / 0.18), 0 0 0 1px rgb(16 24 40 / 0.04);
+  --shadow-admin-drag: 0 16px 36px -10px rgb(16 24 40 / 0.28), 0 0 0 1px var(--color-admin-primary-border);
+  --shadow-admin-focus: 0 0 0 4px rgb(79 70 229 / 0.18);
+
+  /* --- SPACING (Basis 4px, benannter Rhythmus) --- */
+  --spacing-gutter: 1.25rem; /* 20px Seitenrand Gast */
+  --spacing-row: 1.125rem; /* 18px vertikal je Item-Row */
+  --spacing-section: 2.25rem; /* 36px zwischen Kategorien */
+  --spacing-nav: 3.5rem; /* 56px sticky Kategorie-Nav */
+  --spacing-tap: 2.75rem; /* 44px Touch-Target */
+
+  /* --- LAYOUT --- */
+  --container-menu: 34.5rem; /* 552px Gastkarten-Spalte */
+  --container-admin: 75rem; /* 1200px */
+  --container-builder: 90rem; /* 1440px */
+
+  /* --- MOTION --- */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast: 120ms; /* Farb-/Border-Wechsel */
+  --dur-base: 180ms; /* Chips, Buttons, Fades */
+  --dur-sheet: 280ms; /* Bottom-Sheet, Dialog */
+}
+
+/* ------------------------------------------------------------------ *
+ * 3) TENANT-BRIDGE – @theme inline, damit die Utilities die Variable
+ *    REFERENZIEREN statt den Wert zur Build-Zeit einzubacken.
+ *    Ergibt: bg-brand, text-brand-text, border-brand-border, ...
+ * ------------------------------------------------------------------ */
+@theme inline {
+  /* Referenzieren statt einbacken: so kann die Schriftpaarung pro Restaurant
+     per inline style auf dem Wrapper gesetzt werden. */
+  --font-display: var(--font-display-active);
+  --font-sans: var(--font-sans-active);
+
+  --color-brand: var(--accent);
+  --color-brand-ink: var(--accent-ink);
+  --color-brand-text: var(--accent-text);
+  --color-brand-soft: var(--accent-soft);
+  --color-brand-border: var(--accent-border);
+}
+
+/* ------------------------------------------------------------------ *
+ * 4) BASE
+ * ------------------------------------------------------------------ */
+@layer base {
+  /* Tailwind v4 setzt cursor:default auf button – zurueckdrehen. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* iOS zoomt bei Inputs <16px -> nie kleiner. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Sticky-Nav-Offset fuer Scroll-Spy-Anker */
+  [data-menu-section] {
+    scroll-margin-top: calc(var(--spacing-nav) + 16px);
+  }
+
+  /* Focus rings follow the surface they sit on: indigo in the admin, the
+     tenant accent on the guest menu. Without this, the admin inherits the
+     guest brand colour and looks like a different product mid-interaction. */
+  :root {
+    --focus-ring: var(--color-admin-primary);
+  }
+
+  [data-guest-root] {
+    --focus-ring: var(--accent);
+  }
+
+  :where(a, button, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Dialogs and sheets are focused programmatically on open so screen readers
+     announce the title; they are not user-navigated controls, so they should
+     not draw a ring. */
+  [role="dialog"]:focus,
+  [role="dialog"]:focus-visible {
+    outline: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Kategorie-Chip-Leiste: Rand-Fades statt harter Abschnitt */
+  .scroll-fade-x {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Bildloser Cover-Fallback: feine diagonale Papierstruktur in Wirt-Farbe */
+  .cover-fallback {
+    background-color: var(--accent-soft);
+    background-image: repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--accent) 10%, transparent) 0 1px,
+      transparent 1px 9px
+    );
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 5) KEYFRAMES – nur Opacity/Transform (compositor-freundlich)
+ * ------------------------------------------------------------------ */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Kurzes Aufleuchten, wenn die Phone-Preview dem Fokus im Builder folgt. */
+@keyframes preview-flash {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: var(--accent-soft);
+  }
+}
+
+.preview-flash {
+  animation: preview-flash 1s var(--ease-out-soft);
+}
+
+/* ------------------------------------------------------------------ *
+ * 6) GAST-THEME "classic" – gesetzte Karte statt Interface.
+ *    [data-guest-theme="classic"] sitzt auf DEMSELBEN Element wie
+ *    [data-guest-root]. Ueberschrieben werden ausschliesslich Tokens,
+ *    damit bestehende Utilities (bg-guest-bg, text-item, px-gutter,
+ *    rounded-guest, max-w-menu ...) ohne Component-Aenderung mitziehen.
+ *    --accent* bleibt voellig unberuehrt: die Wirt-Farbe wird weiterhin
+ *    gegen GUEST_SURFACE (#fbf9f6) abgeleitet, und classic aendert
+ *    --color-guest-bg NICHT. Kein Kontrast-Delta.
+ * ------------------------------------------------------------------ */
+[data-guest-theme="classic"] {
+  /* -- Flaechen: kein Weiss. Die Karte ist EIN Bogen Papier. -- */
+  --color-guest-surface: #fbf9f6;
+  --color-guest-surface-2: #f2eee6;
+  --color-guest-ink: #17130f; /* 17.4:1 auf bg – Drucktinte */
+  --color-guest-ink-2: #443c35; /* 10.2:1 – Beschreibung (kursiv) */
+  --color-guest-muted: #675e57; /* 5.9:1 */
+  --color-guest-faint: #9b9188; /* nur Deko, nie Text */
+  --color-guest-border: #ded6ca;
+  --color-guest-border-strong: #c6bcac;
+  --color-guest-veg: #245f3e; /* 7.1:1 – Label ohne Flaeche */
+  --color-guest-veg-soft: transparent;
+
+  /* -- Typografie: eine Familie, Hierarchie ueber Groesse und Schnitt -- */
+  --font-display-active: var(--font-book);
+  --text-hero: 1.875rem;
+  --text-hero--line-height: 2.25rem;
+  --text-hero--letter-spacing: 0.005em;
+  --text-cat: 1.25rem;
+  --text-cat--line-height: 1.625rem;
+  --text-cat--letter-spacing: 0.14em;
+  --text-item: 1.1875rem;
+  --text-item--line-height: 1.5rem;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.5625rem;
+  --text-meta--letter-spacing: 0.08em;
+
+  /* -- Rhythmus: Weissraum trennt, nicht Linien -- */
+  --spacing-gutter: 1.375rem;
+  --spacing-row: 1.375rem;
+  --spacing-section: 3rem;
+  --spacing-nav: 3.25rem;
+  --container-menu: 30rem;
+
+  /* -- Kanten: Print kennt keine Radien und keine Elevation -- */
+  --radius-guest-sm: 2px;
+  --radius-guest: 2px;
+  --radius-guest-lg: 3px;
+  --radius-guest-sheet: 4px;
+  --shadow-guest-card: none;
+  --shadow-guest-raise: none;
+  --shadow-guest-nav: none;
+
+  /* -- Motion: sachlich, nichts federt -- */
+  --ease-out-soft: cubic-bezier(0.33, 0, 0.15, 1);
+  --dur-base: 140ms;
+
+  font-family: var(--font-book);
+  font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
+}
+
+/* UI-Chrome bleibt Karla: eine Buchschrift in 12px-Versalien wird auf
+   dem Handy unleserlich. */
+[data-guest-theme="classic"] [data-chrome] {
+  font-family: var(--font-sans);
+  font-feature-settings: normal;
+}
+
+@layer utilities {
+  /* Zierregel unter der Rubrik. Die 5x5px-Raute ist der EINZIGE Ort,
+     an dem die Wirt-Farbe in classic als Flaeche auftritt. */
+  .rule-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    max-width: 160px;
+    margin-inline: auto;
+  }
+  .rule-ornament::before,
+  .rule-ornament::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--color-guest-border-strong);
+  }
+  .rule-ornament > i {
+    width: 5px;
+    height: 5px;
+    rotate: 45deg;
+    background: var(--accent);
+  }
+
+  /* Abschluss des Titelblocks: 2px ueber 1px, klassische Doppelregel. */
+  .rule-double {
+    height: 4px;
+    border-top: 2px solid var(--color-guest-border-strong);
+    border-bottom: 1px solid var(--color-guest-border-strong);
+  }
+
+  /* Fussnoten-Allergene am Gerichtnamen. Rein visuell (aria-hidden),
+     der lesbare Text steht als sr-only daneben. */
+  .allergen-sup {
+    font-size: 0.66em;
+    line-height: 1;
+    vertical-align: 0.42em;
+    margin-left: 0.18em;
+    letter-spacing: 0.04em;
+    color: var(--color-guest-muted);
+    font-variant-numeric: lining-nums;
+  }
+
+  /* Preisspalte: buendige rechte Kante ersetzt die Punktlinie. */
+  .price-col {
+    min-width: 5rem;
+    flex-shrink: 0;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+}
