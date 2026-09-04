@@ -10,3 +10,4 @@ npm-debug.log*
 next-env.d.ts
 /public/uploads/*
 !/public/uploads/.gitkeep
+tsconfig.tsbuildinfo

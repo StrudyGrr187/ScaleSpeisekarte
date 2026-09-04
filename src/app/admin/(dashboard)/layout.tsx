@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireTenant } from "@/lib/tenant";
+import { isAiConfigured } from "@/lib/ai";
 import { SidebarNav } from "@/components/admin/sidebar-nav";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -14,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <ToastProvider>
       <div className="min-h-dvh bg-admin-bg">
         <SidebarNav
+          aiReady={isAiConfigured()}
           restaurantName={restaurant.name}
           slug={restaurant.slug}
           email={user.email}

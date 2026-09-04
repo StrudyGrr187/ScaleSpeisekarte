@@ -115,68 +115,61 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_auto]">
       <div className="min-w-0 space-y-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <span className="flex items-center gap-2">
-                <Sparkles size={17} strokeWidth={1.75} aria-hidden className="text-admin-primary" />
-                Look von der KI vorschlagen lassen
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardBody>
-            {aiReady ? (
-              <>
-                <p className="mb-3 text-admin-base text-admin-muted">
-                  Beschreibe dein Lokal in einem Satz. Die KI schlägt Farbe, Schrift und Theme vor —
-                  übernommen wird nichts, bis du speicherst.
-                </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="z. B. gemütliche Weinbar mit offener Küche, warm und unaufgeregt"
-                    maxLength={500}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && prompt.trim() && !suggesting) {
-                        e.preventDefault();
-                        void suggest();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={suggest}
-                    disabled={suggesting || prompt.trim().length < 3}
-                    className="shrink-0"
-                  >
-                    {suggesting ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" aria-hidden />
-                        Denkt nach…
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles size={16} strokeWidth={2} aria-hidden />
-                        Vorschlag
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {rationale ? (
-                  <p className="mt-3 rounded-admin border border-admin-primary-border bg-admin-primary-soft px-3.5 py-3 text-admin-base text-[#3730a3]">
-                    {rationale}
-                  </p>
-                ) : null}
-              </>
-            ) : (
-              <p className="text-admin-base text-admin-muted">
-                Für KI-Vorschläge fehlt auf diesem Server ein API-Key. Du kannst den Look unten
-                trotzdem selbst zusammenstellen.
+        {aiReady ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <span className="flex items-center gap-2">
+                  <Sparkles size={17} strokeWidth={1.75} aria-hidden className="text-admin-primary" />
+                  Look von der KI vorschlagen lassen
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <p className="mb-3 text-admin-base text-admin-muted">
+                Beschreibe dein Lokal in einem Satz. Die KI schlägt Farbe, Schrift und Theme vor —
+                übernommen wird nichts, bis du speicherst.
               </p>
-            )}
-          </CardBody>
-        </Card>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="z. B. gemütliche Weinbar mit offener Küche, warm und unaufgeregt"
+                  maxLength={500}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && prompt.trim() && !suggesting) {
+                      e.preventDefault();
+                      void suggest();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={suggest}
+                  disabled={suggesting || prompt.trim().length < 3}
+                  className="shrink-0"
+                >
+                  {suggesting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" aria-hidden />
+                      Denkt nach…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} strokeWidth={2} aria-hidden />
+                      Vorschlag
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {rationale ? (
+                <p className="mt-3 rounded-admin border border-admin-primary-border bg-admin-primary-soft px-3.5 py-3 text-admin-base text-[#3730a3]">
+                  {rationale}
+                </p>
+              ) : null}
+            </CardBody>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader>

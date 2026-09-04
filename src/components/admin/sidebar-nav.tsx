@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
   ExternalLink,
   LayoutDashboard,
@@ -19,10 +20,19 @@ import {
 import { logoutAction } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  /** Hidden while no Claude key is configured — the page would be a dead end. */
+  needsAi?: boolean;
+};
+
+const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/builder", label: "Speisekarte", icon: UtensilsCrossed },
-  { href: "/admin/import", label: "Karte importieren", icon: Sparkles },
+  { href: "/admin/import", label: "Karte importieren", icon: Sparkles, needsAi: true },
   { href: "/admin/design", label: "Design", icon: Palette },
   { href: "/admin/restaurant", label: "Restaurant", icon: Store },
   { href: "/admin/qr", label: "QR & NFC", icon: QrCode },
@@ -33,10 +43,12 @@ export function SidebarNav({
   restaurantName,
   slug,
   email,
+  aiReady,
 }: {
   restaurantName: string;
   slug: string;
   email: string;
+  aiReady: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
@@ -102,7 +114,7 @@ export function SidebarNav({
             Verwaltung
           </p>
           <ul className="space-y-0.5">
-            {NAV.map((item) => {
+            {NAV.filter((item) => aiReady || !item.needsAi).map((item) => {
               const active = item.exact
                 ? pathname === item.href
                 : pathname.startsWith(item.href);
