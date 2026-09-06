@@ -17,11 +17,20 @@ enum Role {
   PLATFORM_ADMIN
 }
 
-/// Presentation style of the public menu. MODERN is the scrolling digital list;
-/// CLASSIC is the typographic look of a printed menu. Same data, same speed.
+/// Presentation style of the public menu. Each value is a token block in
+/// design/theme.css plus an entry in src/lib/themes.ts; the components only ever
+/// branch on the two layout archetypes, never on the individual theme.
 enum MenuTheme {
   MODERN
   CLASSIC
+  MINIMAL
+  WARM
+  NIGHT
+  BISTRO
+  BOLD
+  LINEN
+  SLATE
+  GARDEN
 }
 
 model User {

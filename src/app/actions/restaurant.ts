@@ -8,6 +8,7 @@ import { z } from "zod";
 import { openingHoursSchema, restaurantSchema } from "@/lib/validation";
 import { deleteImage, saveImage, UploadError, type ImageKind } from "@/lib/storage";
 import { FONT_PAIR_KEYS } from "@/lib/fonts";
+import { THEME_KEYS, type ThemeKey } from "@/lib/themes";
 import { normalizeHex } from "@/lib/color";
 
 function revalidateAll(slug: string) {
@@ -199,7 +200,7 @@ export async function removeImageAction(
  * Values are checked against the closed registries, never trusted as given.
  */
 const lookSchema = z.object({
-  menuTheme: z.enum(["MODERN", "CLASSIC"]),
+  menuTheme: z.enum(THEME_KEYS as [string, ...string[]]),
   // Closed registry: a font key the app cannot resolve would render as the
   // browser default, so it must never reach the database.
   fontPair: z.enum(FONT_PAIR_KEYS as [string, ...string[]]),
@@ -222,7 +223,7 @@ export async function applyLookAction(input: unknown): Promise<ActionResult<unde
     await prisma.restaurant.update({
       where: { id: restaurant.id },
       data: {
-        menuTheme: parsed.data.menuTheme,
+        menuTheme: parsed.data.menuTheme as ThemeKey,
         fontPair: parsed.data.fontPair,
         ...(parsed.data.primaryColor ? { primaryColor: parsed.data.primaryColor } : {}),
       },

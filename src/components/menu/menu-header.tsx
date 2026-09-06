@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { PublicRestaurant } from "@/lib/menu-query";
-import type { GuestTheme } from "@/components/menu/menu-item-row";
+import type { Archetype } from "@/lib/themes";
 
 /**
  * Cover, logo and name. Every visual element is optional: with no cover and no
@@ -11,14 +11,14 @@ import type { GuestTheme } from "@/components/menu/menu-item-row";
  */
 export function MenuHeader({
   restaurant,
-  theme,
+  archetype,
 }: {
   restaurant: PublicRestaurant;
-  theme: GuestTheme;
+  archetype: Archetype;
 }) {
   const subtitle = [restaurant.description, restaurant.address].filter(Boolean)[0];
 
-  if (theme === "CLASSIC") {
+  if (archetype === "print") {
     return (
       <header>
         {restaurant.coverImage ? (

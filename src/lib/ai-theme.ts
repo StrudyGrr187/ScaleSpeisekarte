@@ -5,6 +5,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { AppError } from "@/lib/action-result";
 import { AI_MODEL, getAiClient, toAiError } from "@/lib/ai";
 import { contrastRatio, deriveAccentTokens, normalizeHex } from "@/lib/color";
+import { DEFAULT_THEME, MENU_THEMES, THEME_KEYS, type ThemeKey } from "@/lib/themes";
 import { DEFAULT_FONT_PAIR, FONT_PAIRS, type FontPairKey } from "@/lib/fonts";
 
 /**
@@ -22,10 +23,8 @@ const SuggestionSchema = z.object({
     .enum(FONT_PAIRS.map((p) => p.key) as [FontPairKey, ...FontPairKey[]])
     .describe("Schlüssel der Schriftpaarung"),
   menuTheme: z
-    .enum(["MODERN", "CLASSIC"])
-    .describe(
-      "MODERN = digitale Liste mit Bildern. CLASSIC = Satzbild einer gedruckten Karte, ohne Bilder."
-    ),
+    .enum(THEME_KEYS as [ThemeKey, ...ThemeKey[]])
+    .describe("Schlüssel der Darstellung"),
   rationale: z
     .string()
     .describe("Ein bis zwei Sätze auf Deutsch, warum das zum Restaurant passt. Kein Marketing."),
@@ -34,7 +33,7 @@ const SuggestionSchema = z.object({
 export type ThemeSuggestion = {
   accentColor: string;
   fontPair: FontPairKey;
-  menuTheme: "MODERN" | "CLASSIC";
+  menuTheme: ThemeKey;
   rationale: string;
   /** True when the model's colour was replaced because it was unusable. */
   colorAdjusted: boolean;
@@ -49,9 +48,10 @@ Akzentfarbe:
 - Wähle satte, gedeckte Töne, die auf warmem Papier gut wirken. Keine Neonfarben, kein reines Schwarz, kein reines Weiß.
 - Orientiere dich an Küche und Stimmung, nicht an Modetrends.
 
-Theme:
-- MODERN für Läden, die von Fotos profitieren: Streetfood, Burger, Brunch, Café mit Kuchen.
-- CLASSIC für Läden, bei denen Typografie mehr trägt als Bilder: Fine Dining, Weinlokal, Trattoria, Gasthaus, Bar mit langer Getränkekarte.
+Theme — wähle genau einen Schlüssel:
+${MENU_THEMES.map((t) => `- ${t.key}: ${t.mood}${t.archetype === "print" ? " (ohne Gerichtsfotos)" : ""}`).join("\n")}
+
+Themes mit Bildern lohnen sich nur, wenn Fotos die Speisen verkaufen (Streetfood, Burger, Brunch, Kuchen). Trägt die Typografie mehr als das Bild, nimm eine der Druck-Darstellungen.
 
 Halte die Begründung sachlich und kurz.`;
 
@@ -116,14 +116,14 @@ function validate(parsed: z.infer<typeof SuggestionSchema>): ThemeSuggestion {
   const accentColor = unusable ? "#b4472a" : normalized;
 
   // deriveAccentTokens guarantees readable foregrounds for whatever we keep.
-  deriveAccentTokens(accentColor);
+  deriveAccentTokens(accentColor, parsed.menuTheme);
 
   return {
     accentColor,
     fontPair: FONT_PAIRS.some((p) => p.key === parsed.fontPair)
       ? parsed.fontPair
       : DEFAULT_FONT_PAIR,
-    menuTheme: parsed.menuTheme === "CLASSIC" ? "CLASSIC" : "MODERN",
+    menuTheme: THEME_KEYS.includes(parsed.menuTheme) ? parsed.menuTheme : DEFAULT_THEME,
     rationale: parsed.rationale.trim().slice(0, 400),
     colorAdjusted: unusable,
   };

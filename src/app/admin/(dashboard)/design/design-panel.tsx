@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { builderToPublic, type BuilderData } from "@/lib/builder-types";
 import { contrastRatio, deriveAccentTokens, normalizeHex } from "@/lib/color";
+import { MENU_THEMES, resolveTheme, type ThemeKey } from "@/lib/themes";
 import { FONT_PAIRS, type FontPairKey } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { ThemeCard } from "./theme-card";
@@ -28,7 +29,7 @@ const PRESET_COLORS = [
 ];
 
 type Look = {
-  menuTheme: "MODERN" | "CLASSIC";
+  menuTheme: ThemeKey;
   fontPair: FontPairKey;
   primaryColor: string;
 };
@@ -47,6 +48,7 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
   );
 
   const [look, setLook] = React.useState<Look>(saved);
+  const isPrint = resolveTheme(look.menuTheme).archetype === "print";
   React.useEffect(() => setLook(saved), [saved]);
 
   const [prompt, setPrompt] = React.useState("");
@@ -176,14 +178,14 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
             <CardTitle>Darstellung</CardTitle>
           </CardHeader>
           <CardBody>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(["MODERN", "CLASSIC"] as const).map((theme) => (
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {MENU_THEMES.map((theme) => (
                 <ThemeCard
-                  key={theme}
+                  key={theme.key}
                   theme={theme}
-                  active={look.menuTheme === theme}
+                  active={look.menuTheme === theme.key}
                   accent={tokens.accent}
-                  onSelect={() => setLook((l) => ({ ...l, menuTheme: theme }))}
+                  onSelect={() => setLook((l) => ({ ...l, menuTheme: theme.key }))}
                 />
               ))}
             </div>
@@ -195,17 +197,18 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
             <CardTitle>Schrift</CardTitle>
           </CardHeader>
           <CardBody>
-            {look.menuTheme === "CLASSIC" ? (
+            {isPrint ? (
               <p className="mb-4 rounded-admin border border-admin-border bg-admin-bg px-3.5 py-3 text-admin-base text-admin-muted">
-                „Klassisch" setzt Name, Beschreibung und Preis bewusst in einer einzigen
-                Buchschrift (EB Garamond) — so wie eine gedruckte Karte. Die Auswahl unten wirkt
-                nur im Theme „Modern".
+                „{resolveTheme(look.menuTheme).label}" ist eine Druck-Darstellung: Name,
+                Beschreibung und Preis stehen bewusst in einer einzigen Buchschrift (EB Garamond),
+                so wie auf einer gedruckten Karte. Von der Auswahl unten wirkt hier nur die
+                Grundschrift.
               </p>
             ) : null}
             <ul
               className={cn(
                 "grid gap-2 sm:grid-cols-2",
-                look.menuTheme === "CLASSIC" && "opacity-55"
+                isPrint && "opacity-55"
               )}
             >
               {FONT_PAIRS.map((pair) => {

@@ -1,11 +1,18 @@
 "use client";
 
+import * as React from "react";
 import { Check } from "lucide-react";
+import { accentStyle } from "@/lib/color";
+import type { MenuThemeDef } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 /**
- * Miniature of each theme's layout. Abstract on purpose — the real preview is
- * the phone next to it; this only has to make the choice legible at a glance.
+ * Miniature of a theme's layout, painted in that theme's own tokens.
+ *
+ * The swatch carries `data-guest-theme` and the derived accent variables, so it
+ * inherits the real palette from design/theme.css instead of repeating it in
+ * TypeScript. A new theme therefore needs no change here, and the swatch can
+ * never show colours the guest menu does not actually use.
  */
 export function ThemeCard({
   theme,
@@ -13,12 +20,16 @@ export function ThemeCard({
   accent,
   onSelect,
 }: {
-  theme: "MODERN" | "CLASSIC";
+  theme: MenuThemeDef;
   active: boolean;
   accent: string;
   onSelect: () => void;
 }) {
-  const isClassic = theme === "CLASSIC";
+  const print = theme.archetype === "print";
+  // Three print themes share a palette and differ only in rhythm — without this
+  // they are indistinguishable at swatch size.
+  const rowGap = { tight: "mt-1", normal: "mt-1.5", airy: "mt-2.5" }[theme.density];
+  const width = { tight: "w-[82%]", normal: "w-full", airy: "w-full" }[theme.density];
 
   return (
     <button
@@ -26,7 +37,7 @@ export function ThemeCard({
       onClick={onSelect}
       aria-pressed={active}
       className={cn(
-        "flex w-full flex-col gap-3 rounded-admin-lg border bg-admin-surface p-3 text-left",
+        "flex w-full flex-col gap-2.5 rounded-admin-lg border bg-admin-surface p-2.5 text-left",
         "transition-colors duration-[var(--dur-fast)]",
         active
           ? "border-admin-primary shadow-admin-focus"
@@ -34,39 +45,41 @@ export function ThemeCard({
       )}
     >
       <span
-        className="block h-[132px] overflow-hidden rounded-admin border border-admin-border bg-[#fbf9f6] px-3 py-2.5"
+        data-guest-theme={theme.key.toLowerCase()}
+        style={accentStyle(accent, theme.key) as React.CSSProperties}
+        className="block h-[112px] overflow-hidden rounded-admin border border-admin-border bg-guest-bg px-2.5 py-2"
         aria-hidden
       >
-        {isClassic ? (
-          <span className="flex h-full flex-col items-center gap-1.5">
-            <span className="h-px w-10 bg-[#d6cfc6]" />
-            <span className="h-2 w-16 rounded-[1px] bg-[#1a1614]" />
-            <span className="h-px w-10 bg-[#d6cfc6]" />
-            <span className="mt-2 h-1.5 w-12 rounded-[1px]" style={{ backgroundColor: accent }} />
+        {print ? (
+          <span className={cn("mx-auto flex h-full flex-col items-center gap-1", width)}>
+            <span className="h-px w-8 bg-guest-border-strong" />
+            <span className="h-1.5 w-14 rounded-[1px] bg-guest-ink" />
+            <span className="h-px w-8 bg-guest-border-strong" />
+            <span className="mt-1.5 h-1 w-10 rounded-[1px] bg-brand" />
             {[0, 1, 2].map((i) => (
-              <span key={i} className="mt-1.5 flex w-full items-baseline gap-1">
-                <span className="h-1.5 w-12 rounded-[1px] bg-[#4a423c]" />
-                <span className="h-px flex-1 bg-[#d6cfc6]" />
-                <span className="h-1.5 w-5 rounded-[1px] bg-[#1a1614]" />
+              <span key={i} className={cn("flex w-full items-baseline gap-1", rowGap)}>
+                <span className="h-1.5 w-10 rounded-[1px] bg-guest-ink-2" />
+                <span className="h-px flex-1 bg-guest-border-strong" />
+                <span className="h-1.5 w-4 rounded-[1px] bg-guest-ink" />
               </span>
             ))}
           </span>
         ) : (
           <span className="flex h-full flex-col gap-1.5">
-            <span className="h-2.5 w-20 rounded-[1px] bg-[#1a1614]" />
+            <span className="h-2 w-16 rounded-[1px] bg-guest-ink" />
             <span className="flex gap-1">
-              <span className="h-3 w-9 rounded-full" style={{ backgroundColor: accent }} />
-              <span className="h-3 w-9 rounded-full border border-[#e8e2da] bg-white" />
-              <span className="h-3 w-9 rounded-full border border-[#e8e2da] bg-white" />
+              <span className="h-2.5 w-7 rounded-guest-sm bg-brand" />
+              <span className="h-2.5 w-7 rounded-guest-sm border border-guest-border bg-guest-surface" />
+              <span className="h-2.5 w-7 rounded-guest-sm border border-guest-border bg-guest-surface" />
             </span>
             {[0, 1].map((i) => (
-              <span key={i} className="mt-1 flex w-full gap-2">
+              <span key={i} className={cn("flex w-full gap-1.5", theme.density === "airy" ? "mt-2" : "mt-0.5")}>
                 <span className="flex flex-1 flex-col gap-1">
-                  <span className="h-1.5 w-16 rounded-[1px] bg-[#1a1614]" />
-                  <span className="h-1 w-full rounded-[1px] bg-[#c9c1b8]" />
-                  <span className="h-1.5 w-7 rounded-[1px] bg-[#1a1614]" />
+                  <span className="h-1.5 w-14 rounded-[1px] bg-guest-ink" />
+                  <span className="h-1 w-full rounded-[1px] bg-guest-muted" />
+                  <span className="h-1.5 w-6 rounded-[1px] bg-guest-ink" />
                 </span>
-                <span className="size-8 shrink-0 rounded-[4px] bg-[#e8e2da]" />
+                <span className="size-7 shrink-0 rounded-guest-sm bg-guest-surface-2" />
               </span>
             ))}
           </span>
@@ -75,17 +88,13 @@ export function ThemeCard({
 
       <span>
         <span className="flex items-center gap-1.5">
-          <span className="text-admin-base font-semibold text-admin-ink">
-            {isClassic ? "Klassisch" : "Modern"}
-          </span>
+          <span className="text-admin-sm font-semibold text-admin-ink">{theme.label}</span>
           {active ? (
-            <Check size={15} strokeWidth={2.5} className="text-admin-primary" aria-hidden />
+            <Check size={14} strokeWidth={2.5} className="text-admin-primary" aria-hidden />
           ) : null}
         </span>
-        <span className="mt-0.5 block text-admin-sm text-admin-muted">
-          {isClassic
-            ? "Satzbild einer gedruckten Karte. Keine Bilder, Preis am Zeilenende."
-            : "Digitale Liste mit Bildern, Chips und Diät-Kennzeichnung."}
+        <span className="mt-0.5 block text-admin-sm leading-snug text-admin-muted">
+          {theme.mood}
         </span>
       </span>
     </button>

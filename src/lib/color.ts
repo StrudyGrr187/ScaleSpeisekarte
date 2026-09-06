@@ -3,6 +3,8 @@
  * readable. Foreground colours are always derived from luminance, never stored.
  */
 
+import { resolveTheme } from "@/lib/themes";
+
 export function normalizeHex(input: string): string | null {
   const value = input.trim().replace(/^#/, "");
   if (/^[0-9a-fA-F]{3}$/.test(value)) {
@@ -79,10 +81,10 @@ export function shade(hex: string, amount: number): string {
   return `#${[mix(r), mix(g), mix(b)].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** The guest menu's paper background — see --color-guest-bg in design/theme.css. */
+/** The default theme's paper background — see --color-guest-bg in design/theme.css. */
 export const GUEST_SURFACE = "#fbf9f6";
 
-/** Accent darkened just enough to hit 4.5:1 on a near-white surface. */
+/** Accent darkened just enough to hit 4.5:1 on a light surface. */
 export function accentOnLight(hex: string, surface = "#ffffff"): string {
   let candidate = normalizeHex(hex) ?? "#000000";
   for (let step = 0; step < 20; step++) {
@@ -90,6 +92,26 @@ export function accentOnLight(hex: string, surface = "#ffffff"): string {
     candidate = shade(candidate, 0.1);
   }
   return "#1a1614";
+}
+
+/** Accent lightened just enough to hit 4.5:1 on a dark surface. */
+export function accentOnDark(hex: string, surface: string): string {
+  let candidate = normalizeHex(hex) ?? "#ffffff";
+  for (let step = 0; step < 24; step++) {
+    if (contrastRatio(candidate, surface) >= 4.5) return candidate;
+    candidate = tint(candidate, 0.1);
+  }
+  return "#ffffff";
+}
+
+/** Mixes `hex` towards `target` — the dark-theme counterpart of tint(). */
+export function mixToward(hex: string, target: string, amount: number): string {
+  const a = hexToRgb(hex);
+  const b = hexToRgb(target);
+  const mix = (from: number, to: number) => Math.round(from + (to - from) * amount);
+  return `#${[mix(a.r, b.r), mix(a.g, b.g), mix(a.b, b.b)]
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")}`;
 }
 
 export type AccentTokens = {
@@ -109,16 +131,48 @@ export type AccentTokens = {
  * Derives every colour the guest menu needs from the single colour the owner
  * picked. Computed on the server and injected as inline CSS variables, so the
  * page never flashes the default brand, and an unreadable choice is impossible.
+ *
+ * The theme matters: `text` has to clear 4.5:1 on that theme's *real* surfaces,
+ * and a dark theme inverts the whole derivation — there the accent is lightened
+ * against the lightest surface instead of darkened against the darkest.
  */
-export function deriveAccentTokens(input: string | null | undefined): AccentTokens {
+export function deriveAccentTokens(
+  input: string | null | undefined,
+  themeKey?: string | null
+): AccentTokens {
   const accent = normalizeHex(input ?? "") ?? "#b91c1c";
+  const theme = resolveTheme(themeKey);
+
+  if (theme.mode === "dark") {
+    // A tinted chip on a dark theme is the accent pulled towards the paper, not
+    // towards white — mixing towards white would produce a pastel that fights
+    // the surface it sits on.
+    const soft = mixToward(accent, theme.paper, 0.78);
+    const border = mixToward(accent, theme.paper, 0.55);
+    // Light text loses contrast against the *lightest* background it can land
+    // on, so solve for that one — and it is usually the raised card, not the
+    // paper. Leaving the card out is what let a dark theme ship text at 4.0:1.
+    const surface = [soft, theme.paper, theme.card].reduce((a, b) =>
+      relativeLuminance(a) > relativeLuminance(b) ? a : b
+    );
+
+    return {
+      accent,
+      ink: readableForeground(accent),
+      text: accentOnDark(accent, surface),
+      soft,
+      border,
+    };
+  }
+
   const soft = tint(accent, 0.88);
 
-  // `text` is used on two surfaces: the tinted `soft` badge and the paper
-  // background. Both are darker than white, so deriving against white would
-  // leave the real-world contrast short. Darken against whichever is darker.
-  const surface =
-    relativeLuminance(soft) < relativeLuminance(GUEST_SURFACE) ? soft : GUEST_SURFACE;
+  // Dark text loses contrast against the *darkest* background it can land on:
+  // the tinted chip, the paper, or the raised card. Deriving against white
+  // would leave the real-world contrast short on all three.
+  const surface = [soft, theme.paper, theme.card].reduce((a, b) =>
+    relativeLuminance(a) < relativeLuminance(b) ? a : b
+  );
 
   return {
     accent,
@@ -130,8 +184,11 @@ export function deriveAccentTokens(input: string | null | undefined): AccentToke
 }
 
 /** CSS custom properties for a guest-theme wrapper element. */
-export function accentStyle(input: string | null | undefined): Record<string, string> {
-  const t = deriveAccentTokens(input);
+export function accentStyle(
+  input: string | null | undefined,
+  themeKey?: string | null
+): Record<string, string> {
+  const t = deriveAccentTokens(input, themeKey);
   return {
     "--accent": t.accent,
     "--accent-ink": t.ink,

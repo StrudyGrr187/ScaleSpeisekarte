@@ -306,8 +306,11 @@
  *    gegen GUEST_SURFACE (#fbf9f6) abgeleitet, und classic aendert
  *    --color-guest-bg NICHT. Kein Kontrast-Delta.
  * ------------------------------------------------------------------ */
-[data-guest-theme="classic"] {
-  /* -- Flaechen: kein Weiss. Die Karte ist EIN Bogen Papier. -- */
+[data-guest-theme="classic"],
+[data-guest-theme="bistro"],
+[data-guest-theme="linen"] {
+  /* -- Flaechen: kein Weiss. Die Karte ist EIN Bogen Papier.
+        Farben je Theme weiter unten; hier steht der gemeinsame Satz. -- */
   --color-guest-surface: #fbf9f6;
   --color-guest-surface-2: #f2eee6;
   --color-guest-ink: #17130f; /* 17.4:1 auf bg – Drucktinte */
@@ -359,7 +362,9 @@
 
 /* UI-Chrome bleibt Karla: eine Buchschrift in 12px-Versalien wird auf
    dem Handy unleserlich. */
-[data-guest-theme="classic"] [data-chrome] {
+[data-guest-theme="classic"] [data-chrome],
+[data-guest-theme="bistro"] [data-chrome],
+[data-guest-theme="linen"] [data-chrome] {
   font-family: var(--font-sans);
   font-feature-settings: normal;
 }
@@ -416,4 +421,170 @@
     white-space: nowrap;
     font-variant-numeric: lining-nums tabular-nums;
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * 7) DIE UEBRIGEN GAST-THEMES
+ *
+ *    Jeder Block ueberschreibt ausschliesslich Tokens. Kein Selektor
+ *    hier kennt eine Komponente, und keine Komponente kennt einen
+ *    Theme-Namen: gerendert wird nach Archetyp (Liste / Druck), das
+ *    Aussehen kommt von hier.
+ *
+ *    --color-guest-bg und --color-guest-surface muessen mit `paper`
+ *    bzw. `card` in src/lib/themes.ts uebereinstimmen — daran haengt
+ *    die Kontrastableitung der Wirt-Farbe. `npm run check:contrast`
+ *    liest beide Seiten und bricht ab, wenn sie auseinanderlaufen.
+ * ------------------------------------------------------------------ */
+
+/* -- MINIMAL: kuehles Weiss, Hierarchie nur ueber Groesse ----------- */
+[data-guest-theme="minimal"] {
+  --color-guest-bg: #ffffff;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #f5f5f4;
+  --color-guest-ink: #18181b; /* 16.9:1 */
+  --color-guest-ink-2: #3f3f46; /* 10.4:1 */
+  --color-guest-muted: #64646d; /* 5.9:1 */
+  --color-guest-faint: #a1a1aa;
+  --color-guest-border: #ebebe9;
+  --color-guest-border-strong: #d9d9d6;
+  --radius-guest-sm: 4px;
+  --radius-guest: 6px;
+  --radius-guest-lg: 8px;
+  --shadow-guest-card: none;
+  --shadow-guest-raise: 0 4px 16px -10px rgb(0 0 0 / 0.14);
+  --spacing-section: 3rem;
+}
+
+/* -- WARM: Sandton, weiche Kanten ---------------------------------- */
+[data-guest-theme="warm"] {
+  --color-guest-bg: #faf4ea;
+  --color-guest-surface: #fffdf9;
+  --color-guest-surface-2: #f2e8d8;
+  --color-guest-ink: #241d14; /* 15.3:1 */
+  --color-guest-ink-2: #4e4335; /* 8.5:1 */
+  --color-guest-muted: #6f6353; /* 5.3:1 */
+  --color-guest-faint: #a89982;
+  --color-guest-border: #ece0cf;
+  --color-guest-border-strong: #d8c8b0;
+  --radius-guest-sm: 10px;
+  --radius-guest: 16px;
+  --radius-guest-lg: 22px;
+  --radius-guest-sheet: 26px;
+  --shadow-guest-card: 0 1px 3px rgb(80 60 30 / 0.07);
+}
+
+/* -- NACHT: Abendkarte. Dunkel, aber nicht schwarz ------------------ */
+[data-guest-theme="night"] {
+  --color-guest-bg: #16151a;
+  --color-guest-surface: #1f1e25;
+  --color-guest-surface-2: #2a2831;
+  --color-guest-ink: #f5f2ee; /* 14.7:1 auf surface */
+  --color-guest-ink-2: #c9c3bb; /* 9.3:1 */
+  --color-guest-muted: #98918a; /* 5.4:1 */
+  --color-guest-faint: #6b655f;
+  --color-guest-border: #2c2a33;
+  --color-guest-border-strong: #3d3a45;
+  --color-guest-veg: #7fd9a5; /* helles Gruen, 9.8:1 auf surface */
+  --color-guest-veg-soft: #1e3a2b;
+  --color-guest-overlay: color-mix(in oklab, #000000 72%, transparent);
+  --shadow-guest-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-guest-raise: 0 10px 30px -14px rgb(0 0 0 / 0.7);
+  --shadow-guest-nav: 0 1px 0 0 var(--color-guest-border);
+  --shadow-guest-sheet: 0 -12px 48px -8px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* -- BISTRO: Creme, engere Spalte. Erbt den Druck-Block oben -------- */
+[data-guest-theme="bistro"] {
+  --color-guest-bg: #f7f3e8;
+  --color-guest-surface: #f7f3e8;
+  --color-guest-surface-2: #efe8d6;
+  --color-guest-ink: #1c1710; /* 16.1:1 */
+  --color-guest-ink-2: #473f30; /* 8.9:1 */
+  --color-guest-muted: #6b6150; /* 5.4:1 */
+  --color-guest-faint: #9c8f77;
+  --color-guest-border: #e2d7bf;
+  --color-guest-border-strong: #c9b894;
+  --container-menu: 28rem;
+  --spacing-section: 2.5rem;
+}
+
+/* -- KRAEFTIG: harte Kanten, schwarze Trenner ---------------------- */
+[data-guest-theme="bold"] {
+  --color-guest-bg: #f4f4f2;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #e8e8e4;
+  --color-guest-ink: #111111; /* 18.9:1 */
+  --color-guest-ink-2: #333333; /* 12.2:1 */
+  --color-guest-muted: #5c5c5c; /* 5.9:1 */
+  --color-guest-faint: #8f8f8f;
+  --color-guest-border: #d5d5d0;
+  --color-guest-border-strong: #111111;
+  --radius-guest-sm: 0px;
+  --radius-guest: 2px;
+  --radius-guest-lg: 2px;
+  --radius-guest-sheet: 2px;
+  --shadow-guest-card: none;
+  --shadow-guest-raise: none;
+  --text-cat--letter-spacing: 0.02em;
+  --spacing-section: 2.75rem;
+}
+
+/* -- LEINEN: ruhige Flaechen, weite Zeilen. Erbt den Druck-Block ---- */
+[data-guest-theme="linen"] {
+  --color-guest-bg: #f4f1ea;
+  --color-guest-surface: #f4f1ea;
+  --color-guest-surface-2: #eae5da;
+  --color-guest-ink: #1a1814; /* 16.0:1 */
+  --color-guest-ink-2: #443f37; /* 9.0:1 */
+  --color-guest-muted: #6a6459; /* 5.1:1 */
+  --color-guest-faint: #9b9384;
+  --color-guest-border: #e0dace;
+  --color-guest-border-strong: #c5bcaa;
+  --spacing-row: 1.75rem;
+  --spacing-section: 3.75rem;
+  --container-menu: 32rem;
+}
+
+/* -- SCHIEFER: kuehl und dunkel, fuer Wein und Craft Beer ----------- */
+[data-guest-theme="slate"] {
+  --color-guest-bg: #14181f;
+  --color-guest-surface: #1d232c;
+  --color-guest-surface-2: #262e39;
+  --color-guest-ink: #eef2f6; /* 14.1:1 auf surface */
+  --color-guest-ink-2: #bfc8d4; /* 8.9:1 */
+  --color-guest-muted: #8d99a8; /* 5.5:1 */
+  --color-guest-faint: #626d7c;
+  --color-guest-border: #262e39;
+  --color-guest-border-strong: #38424f;
+  --color-guest-veg: #74d3a0;
+  --color-guest-veg-soft: #17362a;
+  --color-guest-overlay: color-mix(in oklab, #05080d 74%, transparent);
+  --radius-guest-sm: 4px;
+  --radius-guest: 6px;
+  --radius-guest-lg: 10px;
+  --shadow-guest-card: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-guest-raise: 0 10px 30px -14px rgb(0 0 0 / 0.75);
+  --shadow-guest-nav: 0 1px 0 0 var(--color-guest-border);
+  --shadow-guest-sheet: 0 -12px 48px -8px rgb(0 0 0 / 0.65);
+  color-scheme: dark;
+}
+
+/* -- GARTEN: sehr hell, luftig -------------------------------------- */
+[data-guest-theme="garden"] {
+  --color-guest-bg: #f7faf6;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #eaf1e7;
+  --color-guest-ink: #16201a; /* 16.4:1 */
+  --color-guest-ink-2: #3b4a3f; /* 9.2:1 */
+  --color-guest-muted: #5f6f63; /* 4.9:1 */
+  --color-guest-faint: #94a698;
+  --color-guest-border: #e2ebdf;
+  --color-guest-border-strong: #cadcc6;
+  --radius-guest-sm: 8px;
+  --radius-guest: 14px;
+  --radius-guest-lg: 20px;
+  --shadow-guest-card: 0 1px 3px rgb(30 60 40 / 0.06);
+  --spacing-row: 1.5rem;
 }

@@ -12,7 +12,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",
-    "admin:create": "tsx prisma/create-admin.ts"
+    "admin:create": "tsx prisma/create-admin.ts",
+    "check:contrast": "tsx scripts/check-contrast.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

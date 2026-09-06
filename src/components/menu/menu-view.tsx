@@ -12,6 +12,7 @@ import { MenuItemRow } from "@/components/menu/menu-item-row";
 import { useScrollSpy } from "@/components/menu/use-scroll-spy";
 import { accentStyle } from "@/lib/color";
 import { fontStyle } from "@/lib/fonts";
+import { resolveTheme, themeAttribute } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -62,12 +63,13 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
 
   const openLegend = React.useCallback(() => setLegendOpen(true), []);
   const hasAllergens = allergenLegend.length > 0;
-  const theme = restaurant.menuTheme;
-  const classic = theme === "CLASSIC";
+  // One lookup, one branch: components render by archetype, never by theme name.
+  const archetype = resolveTheme(restaurant.menuTheme).archetype;
+  const classic = archetype === "print";
 
   const content = (
     <>
-      <MenuHeader restaurant={restaurant} theme={theme} />
+      <MenuHeader restaurant={restaurant} archetype={archetype} />
       <div ref={sentinelRef} aria-hidden className={classic ? "h-4" : "h-9"} />
 
       <CategoryNav
@@ -75,7 +77,7 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
         activeId={activeId}
         onSelect={scrollToSection}
         scrolled={scrolled}
-        theme={theme}
+        archetype={archetype}
         onOpenLegend={openLegend}
         hasAllergens={hasAllergens}
       />
@@ -137,7 +139,7 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
                       item={item}
                       currency={restaurant.currency}
                       locale={restaurant.locale}
-                      theme={theme}
+                      archetype={archetype}
                       onAllergenClick={openLegend}
                       priority={categoryIndex === 0 && itemIndex < 2}
                     />
@@ -151,7 +153,7 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
 
       <MenuFooter
         restaurant={restaurant}
-        theme={theme}
+        archetype={archetype}
         onOpenLegend={openLegend}
         hasAllergens={hasAllergens}
         hasFeatured={categories.some((c) => c.items.some((i) => i.featured && i.available))}
@@ -168,11 +170,11 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
   return (
     <div
       data-guest-root
-      data-guest-theme={restaurant.menuTheme === "CLASSIC" ? "classic" : "modern"}
+      data-guest-theme={themeAttribute(restaurant.menuTheme)}
       style={
         {
-          ...accentStyle(restaurant.primaryColor),
-          ...fontStyle(restaurant.fontPair, restaurant.menuTheme),
+          ...accentStyle(restaurant.primaryColor, restaurant.menuTheme),
+          ...fontStyle(restaurant.fontPair, archetype),
         } as React.CSSProperties
       }
       className={cn(

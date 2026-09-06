@@ -1,13 +1,22 @@
 import type { Metadata, Viewport } from "next";
 import {
+  Cinzel,
   Cormorant_Garamond,
   EB_Garamond,
   DM_Sans,
   DM_Serif_Display,
   Fraunces,
+  Inter,
   Karla,
   Lato,
+  Libre_Bodoni,
+  Nunito_Sans,
+  Oswald,
+  Outfit,
   Playfair_Display,
+  Public_Sans,
+  Space_Grotesk,
+  Varela_Round,
   Work_Sans,
 } from "next/font/google";
 import "./globals.css";
@@ -80,10 +89,83 @@ const dmSans = DM_Sans({
   preload: false,
 });
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-outfit",
+  display: "swap",
+  preload: false,
+});
+
+const oswald = Oswald({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-oswald",
+  display: "swap",
+  preload: false,
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: false,
+});
+
+const libreBodoni = Libre_Bodoni({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-librebodoni",
+  display: "swap",
+  preload: false,
+});
+
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-publicsans",
+  display: "swap",
+  preload: false,
+});
+
+const cinzel = Cinzel({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-cinzel",
+  display: "swap",
+  preload: false,
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-spacegrotesk",
+  display: "swap",
+  preload: false,
+});
+
+const varelaRound = Varela_Round({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-varelaround",
+  display: "swap",
+  preload: false,
+});
+
+const nunitoSans = Nunito_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-nunitosans",
+  display: "swap",
+  preload: false,
+});
+
 /**
- * The book serif for the `classic` guest theme. Playfair is a Didone — its hairlines
- * break down at 17px on a phone in restaurant light — so classic carries name,
- * description and price in one true text serif instead.
+ * The book serif for the `print` archetype. A Didone display face — Playfair, Libre
+ * Bodoni — has hairlines that break down at 17px on a phone in restaurant
+ * light, so the printed look carries name, description and price in one true
+ * text serif instead.
  */
 const ebGaramond = EB_Garamond({
   subsets: ["latin"],
@@ -102,6 +184,15 @@ const FONT_VARIABLES = [
   workSans.variable,
   dmSerif.variable,
   dmSans.variable,
+  outfit.variable,
+  oswald.variable,
+  inter.variable,
+  libreBodoni.variable,
+  publicSans.variable,
+  cinzel.variable,
+  spaceGrotesk.variable,
+  varelaRound.variable,
+  nunitoSans.variable,
   ebGaramond.variable,
 ].join(" ");
 

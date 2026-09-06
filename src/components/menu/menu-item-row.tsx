@@ -5,9 +5,9 @@ import { Star } from "lucide-react";
 import type { PublicMenuItem } from "@/lib/menu-query";
 import { DietaryIcon } from "@/components/menu/dietary-icon";
 import { formatPrice, formatPriceDecimal } from "@/lib/money";
+import type { Archetype } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
-export type GuestTheme = "MODERN" | "CLASSIC";
 
 /**
  * One dish. Both themes share this component; they differ in exactly three
@@ -22,21 +22,21 @@ export function MenuItemRow({
   item,
   currency,
   locale,
-  theme,
+  archetype,
   onAllergenClick,
   priority,
 }: {
   item: PublicMenuItem;
   currency: string;
   locale: string;
-  theme: GuestTheme;
+  archetype: Archetype;
   onAllergenClick: () => void;
   priority?: boolean;
 }) {
   const soldOut = !item.available;
   const discounted = item.oldPrice !== null && item.oldPrice > item.price;
 
-  return theme === "CLASSIC"
+  return archetype === "print"
     ? renderClassic({ item, locale, currency, soldOut, discounted })
     : renderModern({ item, currency, locale, soldOut, discounted, onAllergenClick, priority });
 }

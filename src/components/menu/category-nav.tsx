@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Info } from "lucide-react";
-import type { GuestTheme } from "@/components/menu/menu-item-row";
+import type { Archetype } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,7 +19,7 @@ export function CategoryNav({
   activeId,
   onSelect,
   scrolled,
-  theme,
+  archetype,
   onOpenLegend,
   hasAllergens,
 }: {
@@ -27,7 +27,7 @@ export function CategoryNav({
   activeId: string | null;
   onSelect: (sectionId: string) => void;
   scrolled: boolean;
-  theme: GuestTheme;
+  archetype: Archetype;
   onOpenLegend: () => void;
   hasAllergens: boolean;
 }) {
@@ -55,7 +55,7 @@ export function CategoryNav({
 
   if (categories.length === 0) return null;
 
-  const classic = theme === "CLASSIC";
+  const classic = archetype === "print";
 
   return (
     <nav

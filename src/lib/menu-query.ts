@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import type { ThemeKey } from "@/lib/themes";
 
 /**
  * The single view model behind both the public menu and the admin phone
@@ -42,7 +43,7 @@ export type PublicRestaurant = {
   primaryColor: string;
   currency: string;
   locale: string;
-  menuTheme: "MODERN" | "CLASSIC";
+  menuTheme: ThemeKey;
   fontPair: string;
   openingHours: {
     dayOfWeek: number;

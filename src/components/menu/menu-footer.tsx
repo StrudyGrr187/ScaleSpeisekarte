@@ -1,25 +1,25 @@
 import { Globe, MapPin, Phone, Star } from "lucide-react";
 import type { PublicRestaurant } from "@/lib/menu-query";
-import type { GuestTheme } from "@/components/menu/menu-item-row";
+import type { Archetype } from "@/lib/themes";
 import { WEEKDAYS_SHORT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /** Practical detail a guest actually looks for, kept below the menu itself. */
 export function MenuFooter({
   restaurant,
-  theme,
+  archetype,
   onOpenLegend,
   hasAllergens,
   hasFeatured,
 }: {
   restaurant: PublicRestaurant;
-  theme: GuestTheme;
+  archetype: Archetype;
   onOpenLegend: () => void;
   hasAllergens: boolean;
   hasFeatured: boolean;
 }) {
   const hours = restaurant.openingHours;
-  const classic = theme === "CLASSIC";
+  const classic = archetype === "print";
 
   return (
     <footer className="mt-section border-t border-guest-border px-gutter pt-8 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
