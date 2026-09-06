@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
-  ExternalLink,
   LayoutDashboard,
   Palette,
   Sparkles,
@@ -41,12 +40,10 @@ const NAV: NavItem[] = [
 
 export function SidebarNav({
   restaurantName,
-  slug,
   email,
   aiReady,
 }: {
   restaurantName: string;
-  slug: string;
   email: string;
   aiReady: boolean;
 }) {
@@ -143,19 +140,6 @@ export function SidebarNav({
               );
             })}
           </ul>
-
-          <p className="px-3 pt-5 pb-1.5 text-[11px] font-bold tracking-[0.08em] text-admin-muted uppercase">
-            Gastansicht
-          </p>
-          <a
-            href={`/menu/${slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-10 items-center gap-2.5 rounded-admin px-3 text-admin-base font-medium text-admin-ink-2 transition-colors duration-[var(--dur-fast)] hover:bg-[#f3f4f6]"
-          >
-            <ExternalLink size={18} strokeWidth={1.75} aria-hidden className="text-admin-muted" />
-            Karte öffnen
-          </a>
         </nav>
 
         <div className="border-t border-admin-border p-3">

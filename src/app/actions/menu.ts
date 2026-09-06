@@ -473,7 +473,7 @@ export async function setPublishedAction(published: boolean): Promise<ActionResu
     revalidatePath(`/menu/${restaurant.slug}`);
     return ok(
       undefined,
-      published ? "Die Karte ist jetzt öffentlich." : "Die Karte ist offline."
+      published ? "Die Karte ist jetzt veröffentlicht." : "Die Karte ist wieder ein Entwurf."
     );
   });
 }

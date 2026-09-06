@@ -27,9 +27,9 @@ export default async function QrPage() {
         description="Ein Ziel für beides: QR-Code und NFC-Plakette zeigen auf dieselbe Adresse."
         actions={
           menu.published ? (
-            <Badge variant="success">Karte ist online</Badge>
+            <Badge variant="success">Veröffentlicht</Badge>
           ) : (
-            <Badge variant="warning">Karte ist offline</Badge>
+            <Badge variant="warning">Entwurf</Badge>
           )
         }
       />

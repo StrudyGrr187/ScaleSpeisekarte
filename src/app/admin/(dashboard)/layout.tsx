@@ -17,7 +17,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <SidebarNav
           aiReady={isAiConfigured()}
           restaurantName={restaurant.name}
-          slug={restaurant.slug}
           email={user.email}
         />
         <div className="lg:pl-[264px]">

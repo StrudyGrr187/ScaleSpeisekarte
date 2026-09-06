@@ -37,14 +37,20 @@ export function CategoryNav({
   React.useEffect(() => {
     if (!activeId) return;
     const chip = chipRefs.current.get(activeId);
-    if (!chip || !listRef.current) return;
+    const list = listRef.current;
+    if (!chip || !list) return;
+
+    // Deliberately not scrollIntoView: that scrolls *every* scrollable ancestor,
+    // and doing so aborts the vertical smooth scroll the same click just started
+    // on the menu container — the chip lit up while the page stayed put.
+    // Only the chip strip should move, so move only the chip strip.
+    const delta = chip.getBoundingClientRect().left - list.getBoundingClientRect().left;
+    const centered = list.scrollLeft + delta - (list.clientWidth - chip.clientWidth) / 2;
+    const left = Math.max(0, Math.min(centered, list.scrollWidth - list.clientWidth));
+    if (Math.abs(left - list.scrollLeft) < 1) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    chip.scrollIntoView({
-      behavior: reduced ? "auto" : "smooth",
-      inline: "center",
-      block: "nearest",
-    });
+    list.scrollTo({ left, behavior: reduced ? "auto" : "smooth" });
   }, [activeId]);
 
   if (categories.length === 0) return null;
