@@ -46,6 +46,20 @@ function blobConfigured(): boolean {
 }
 
 /**
+ * Serverless hosts ship the app as a bundle without the `public` directory and
+ * with a read-only filesystem, so writing an upload there cannot work — the
+ * failure mode differs per host (EROFS, EACCES, ENOENT on Vercel, where
+ * /var/task/public does not even exist). Detecting the host is more reliable
+ * than guessing from an errno, and it fails before touching the disk.
+ */
+function serverlessFilesystem(): boolean {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
+const NO_STORAGE_MESSAGE =
+  "Auf diesem Server können keine Bilder gespeichert werden. Es fehlt ein Blob-Store — im Vercel-Dashboard unter Storage anlegen, dann setzt Vercel BLOB_READ_WRITE_TOKEN selbst.";
+
+/**
  * Validates, downscales and re-encodes an uploaded image, then stores it.
  * Owner phone photos are routinely 6 MB; nothing that large is ever served.
  */
@@ -82,6 +96,9 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
   const filename = `${kind}-${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.webp`;
 
   if (blobConfigured()) return saveToBlob(filename, output);
+  // Checked before the write, so the owner gets the actionable message rather
+  // than whichever errno this particular host happens to raise.
+  if (serverlessFilesystem()) throw new UploadError(NO_STORAGE_MESSAGE);
   return saveToDisk(filename, output);
 }
 
@@ -106,14 +123,11 @@ async function saveToDisk(filename: string, output: Buffer): Promise<string> {
     await mkdir(UPLOAD_DIR, { recursive: true });
     await writeFile(path.join(UPLOAD_DIR, filename), output);
   } catch (error) {
-    // Reaching this on a serverless host means BLOB_READ_WRITE_TOKEN is missing:
-    // the filesystem is read-only and /tmp dies with the invocation. Name the
-    // actual fix instead of surfacing an EROFS stack trace.
+    // Fallback for hosts the check above does not recognise: a read-only or
+    // absent directory still has to produce a message the owner can act on.
     const code = (error as NodeJS.ErrnoException)?.code;
-    if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
-      throw new UploadError(
-        "Auf diesem Server können keine Bilder gespeichert werden. Es fehlt ein Blob-Store — im Vercel-Dashboard unter Storage anlegen, dann setzt Vercel BLOB_READ_WRITE_TOKEN selbst."
-      );
+    if (code === "EROFS" || code === "EACCES" || code === "EPERM" || code === "ENOENT") {
+      throw new UploadError(NO_STORAGE_MESSAGE);
     }
     throw error;
   }
