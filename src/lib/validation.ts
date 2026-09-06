@@ -65,7 +65,16 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Bitte Passwort eingeben."),
 });
 
-export const registerSchema = z.object({
+const passwordField = z
+  .string()
+  .min(8, "Das Passwort muss mindestens 8 Zeichen lang sein.")
+  .max(200, "Das Passwort ist zu lang.");
+
+/**
+ * Creating a customer. There is no public sign-up: the platform operator
+ * creates the tenant and hands the credentials over.
+ */
+export const tenantCreateSchema = z.object({
   restaurantName: z
     .string()
     .trim()
@@ -73,10 +82,12 @@ export const registerSchema = z.object({
     .max(80, "Maximal 80 Zeichen."),
   name: z.string().trim().max(80).optional(),
   email: z.email({ message: "Bitte eine gültige E-Mail-Adresse eingeben." }),
-  password: z
-    .string()
-    .min(8, "Das Passwort muss mindestens 8 Zeichen lang sein.")
-    .max(200, "Das Passwort ist zu lang."),
+  password: passwordField,
+});
+
+export const tenantPasswordSchema = z.object({
+  userId: z.string().min(1),
+  password: passwordField,
 });
 
 export const restaurantSchema = z.object({
@@ -141,7 +152,6 @@ export const menuItemSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
 export type RestaurantInput = z.infer<typeof restaurantSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type MenuItemInput = z.infer<typeof menuItemSchema>;

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { AuthShell } from "@/components/admin/auth-shell";
@@ -14,14 +13,7 @@ export default async function LoginPage() {
     <AuthShell
       title="Willkommen zurück"
       subtitle="Melde dich an, um deine Speisekarte zu bearbeiten."
-      footer={
-        <>
-          Noch kein Konto?{" "}
-          <Link href="/admin/register" className="font-semibold text-admin-primary hover:underline">
-            Restaurant anlegen
-          </Link>
-        </>
-      }
+      footer="Zugänge werden vom Betreiber vergeben. Kein Konto? Melde dich bei uns."
     >
       <LoginForm />
     </AuthShell>

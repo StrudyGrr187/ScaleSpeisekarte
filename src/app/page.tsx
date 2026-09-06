@@ -36,11 +36,8 @@ export default function LandingPage() {
       <header className="mx-auto flex max-w-[1100px] items-center justify-between px-5 py-5">
         <span className="text-admin-h2 font-semibold text-guest-ink">ScaleSpeisekarte</span>
         <nav className="flex items-center gap-2">
-          <Link href="/admin/login" className={buttonClasses("ghost", "md")}>
+          <Link href="/admin/login" className={buttonClasses("primary", "md")}>
             Anmelden
-          </Link>
-          <Link href="/admin/register" className={buttonClasses("primary", "md")}>
-            Loslegen
           </Link>
         </nav>
       </header>
@@ -59,8 +56,8 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/admin/register" className={buttonClasses("primary", "lg")}>
-              Restaurant anlegen
+            <Link href="/admin/login" className={buttonClasses("primary", "lg")}>
+              Zum Login
               <ArrowRight size={16} strokeWidth={2} aria-hidden />
             </Link>
             <Link

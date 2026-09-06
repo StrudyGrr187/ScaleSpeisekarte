@@ -21,8 +21,15 @@ function getSecret(): Uint8Array {
 
 export type SessionPayload = {
   userId: string;
-  restaurantId: string;
+  /** Null for a platform admin, which belongs to no tenant. */
+  restaurantId: string | null;
   email: string;
+  /**
+   * Set while a platform admin works inside a customer's account. Honoured only
+   * after the role has been re-read from the database — a cookie alone must
+   * never be able to widen anyone's reach.
+   */
+  actingRestaurantId?: string | null;
 };
 
 export async function hashPassword(password: string): Promise<string> {
@@ -67,13 +74,15 @@ async function readSessionToken(): Promise<SessionPayload | null> {
     const { payload } = await jwtVerify(token, getSecret(), { algorithms: ["HS256"] });
     if (
       typeof payload.userId === "string" &&
-      typeof payload.restaurantId === "string" &&
+      (typeof payload.restaurantId === "string" || payload.restaurantId === null) &&
       typeof payload.email === "string"
     ) {
       return {
         userId: payload.userId,
         restaurantId: payload.restaurantId,
         email: payload.email,
+        actingRestaurantId:
+          typeof payload.actingRestaurantId === "string" ? payload.actingRestaurantId : null,
       };
     }
     return null;
@@ -107,7 +116,12 @@ export const getCurrentUser = cache(async () => {
   // tenant, treat the session as invalid rather than trusting the token.
   if (!user || user.restaurantId !== session.restaurantId) return null;
 
-  return user;
+  // Impersonation is a property of the role, not of the cookie: a forged
+  // actingRestaurantId on an owner's token resolves to nothing.
+  const actingRestaurantId =
+    user.role === "PLATFORM_ADMIN" ? (session.actingRestaurantId ?? null) : null;
+
+  return { ...user, actingRestaurantId };
 });
 
 export { COOKIE_NAME };

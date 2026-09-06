@@ -12,6 +12,9 @@ datasource db {
 enum Role {
   OWNER
   STAFF
+  /// Operates the platform itself: creates tenants, hands out credentials and
+  /// can act inside any tenant. Has no restaurant of its own.
+  PLATFORM_ADMIN
 }
 
 /// Presentation style of the public menu. MODERN is the scrolling digital list;
@@ -26,9 +29,10 @@ model User {
   email        String     @unique
   passwordHash String
   name         String?
-  role         Role       @default(OWNER)
-  restaurantId String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  role         Role        @default(OWNER)
+  /// Null only for PLATFORM_ADMIN, which belongs to no tenant.
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

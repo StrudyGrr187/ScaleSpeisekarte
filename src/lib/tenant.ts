@@ -12,24 +12,38 @@ export async function requireUser() {
   return user;
 }
 
+/** Server Components under /platform: only the platform operator may enter. */
+export async function requirePlatformAdmin() {
+  const user = await requireUser();
+  if (user.role !== "PLATFORM_ADMIN") redirect("/admin");
+  return user;
+}
+
 /**
  * The single tenant boundary for the admin surface. Everything the dashboard
  * reads or writes must be reached through the restaurantId returned here —
  * never through an id taken from client input.
+ *
+ * A platform admin has no tenant of its own; it borrows one by impersonating,
+ * which is why the acting id wins here. `impersonating` lets the UI say so.
  */
 export async function requireTenant() {
   const user = await requireUser();
 
+  const restaurantId = user.actingRestaurantId ?? user.restaurantId;
+  // A platform admin that has not picked a customer belongs in the customer list.
+  if (!restaurantId) redirect("/platform");
+
   const restaurant = await prisma.restaurant.findUnique({
-    where: { id: user.restaurantId },
+    where: { id: restaurantId },
     include: {
       openingHours: { orderBy: { dayOfWeek: "asc" } },
     },
   });
 
-  if (!restaurant) redirect("/admin/login");
+  if (!restaurant) redirect(user.role === "PLATFORM_ADMIN" ? "/platform" : "/admin/login");
 
-  return { user, restaurant };
+  return { user, restaurant, impersonating: user.actingRestaurantId !== null };
 }
 
 /** Returns the restaurant's default menu, creating it lazily if it is missing. */
