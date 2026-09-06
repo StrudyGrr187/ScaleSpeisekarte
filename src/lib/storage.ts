@@ -3,11 +3,21 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { del as blobDelete, put as blobPut } from "@vercel/blob";
 import sharp from "sharp";
 
 /**
- * Image storage abstraction. The MVP writes to `public/uploads`; swapping in S3
- * or another object store later means reimplementing only these two functions.
+ * Image storage. Two backends behind one pair of functions:
+ *
+ *   Vercel Blob — used whenever BLOB_READ_WRITE_TOKEN is set. Serverless hosts
+ *                 give you a read-only filesystem, so a deployed app cannot
+ *                 keep uploads next to its own code.
+ *   Local disk  — public/uploads, for development. No token, no dependency on
+ *                 a network service while working offline.
+ *
+ * Which one produced a stored value is readable from the value itself: local
+ * paths start with /uploads/, blob values are absolute URLs. Existing rows
+ * therefore keep working after the switch, and deleting picks the right backend.
  */
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
@@ -15,6 +25,9 @@ const PUBLIC_PREFIX = "/uploads";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB before processing
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+
+/** Blob URLs all live under this host; nothing else may be deleted or proxied. */
+export const BLOB_HOST_SUFFIX = ".public.blob.vercel-storage.com";
 
 export type ImageKind = "logo" | "cover" | "item" | "category";
 
@@ -27,6 +40,10 @@ const PRESETS: Record<ImageKind, { width: number; height: number; fit: "cover" |
 };
 
 export class UploadError extends Error {}
+
+function blobConfigured(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+}
 
 /**
  * Validates, downscales and re-encodes an uploaded image, then stores it.
@@ -64,17 +81,38 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
 
   const filename = `${kind}-${Date.now().toString(36)}-${randomBytes(6).toString("hex")}.webp`;
 
+  if (blobConfigured()) return saveToBlob(filename, output);
+  return saveToDisk(filename, output);
+}
+
+async function saveToBlob(filename: string, output: Buffer): Promise<string> {
+  try {
+    // addRandomSuffix stays off: the filename already carries random bytes, and
+    // a predictable key is what makes deletion by stored URL possible.
+    const blob = await blobPut(`uploads/${filename}`, output, {
+      access: "public",
+      contentType: "image/webp",
+      addRandomSuffix: false,
+    });
+    return blob.url;
+  } catch (error) {
+    console.error("[storage] blob upload failed", error);
+    throw new UploadError("Das Bild konnte nicht gespeichert werden. Bitte erneut versuchen.");
+  }
+}
+
+async function saveToDisk(filename: string, output: Buffer): Promise<string> {
   try {
     await mkdir(UPLOAD_DIR, { recursive: true });
     await writeFile(path.join(UPLOAD_DIR, filename), output);
   } catch (error) {
-    // Serverless hosts (Vercel, Lambda) give you a read-only filesystem, and
-    // anything written to /tmp disappears with the invocation. Say so plainly
-    // instead of surfacing an EROFS stack trace.
+    // Reaching this on a serverless host means BLOB_READ_WRITE_TOKEN is missing:
+    // the filesystem is read-only and /tmp dies with the invocation. Name the
+    // actual fix instead of surfacing an EROFS stack trace.
     const code = (error as NodeJS.ErrnoException)?.code;
     if (code === "EROFS" || code === "EACCES" || code === "EPERM") {
       throw new UploadError(
-        "Auf diesem Server können keine Bilder gespeichert werden (schreibgeschütztes Dateisystem). Dafür wird ein Objektspeicher wie S3 benötigt."
+        "Auf diesem Server können keine Bilder gespeichert werden. Es fehlt ein Blob-Store — im Vercel-Dashboard unter Storage anlegen, dann setzt Vercel BLOB_READ_WRITE_TOKEN selbst."
       );
     }
     throw error;
@@ -84,20 +122,43 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
 }
 
 /**
- * Deletes a previously stored image. Silently ignores anything that is not a
- * path this module produced, so a crafted value can never reach outside the
- * upload directory.
+ * Deletes a previously stored image. Silently ignores anything this module did
+ * not produce, so a crafted value can never reach outside the upload directory
+ * or delete a blob belonging to someone else.
  */
-export async function deleteImage(publicPath: string | null | undefined): Promise<void> {
-  if (!publicPath || !publicPath.startsWith(`${PUBLIC_PREFIX}/`)) return;
+export async function deleteImage(stored: string | null | undefined): Promise<void> {
+  if (!stored) return;
 
-  const filename = path.basename(publicPath);
-  const target = path.join(UPLOAD_DIR, filename);
-  if (path.dirname(target) !== UPLOAD_DIR) return;
+  if (stored.startsWith(`${PUBLIC_PREFIX}/`)) {
+    const filename = path.basename(stored);
+    const target = path.join(UPLOAD_DIR, filename);
+    if (path.dirname(target) !== UPLOAD_DIR) return;
+
+    try {
+      await unlink(target);
+    } catch {
+      // Already gone — deleting an image must never fail the surrounding mutation.
+    }
+    return;
+  }
+
+  if (!isBlobUrl(stored) || !blobConfigured()) return;
 
   try {
-    await unlink(target);
+    await blobDelete(stored);
+  } catch (error) {
+    // Same rule as above: a failed cleanup must not roll back the edit that
+    // replaced the image, or the owner is stuck with the old picture.
+    console.error("[storage] blob delete failed", error);
+  }
+}
+
+/** True only for URLs on the Vercel Blob host — checked on the parsed hostname. */
+export function isBlobUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.endsWith(BLOB_HOST_SUFFIX);
   } catch {
-    // Already gone — deleting an image must never fail the surrounding mutation.
+    return false;
   }
 }

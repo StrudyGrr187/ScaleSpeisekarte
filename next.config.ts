@@ -7,9 +7,13 @@ const nextConfig: NextConfig = {
   turbopack: { root: path.resolve(__dirname) },
   // Next would otherwise generate/overwrite CLAUDE.md and AGENTS.md on every dev boot.
   agentRules: false,
-  // No remotePatterns on purpose: every image this app renders is a local
-  // /uploads path. Allowing remote hosts would turn /_next/image into an open
-  // proxy against our own bandwidth.
+  images: {
+    // Exactly one host, and only over https. A wildcard here would turn
+    // /_next/image into an open proxy paid for with our own bandwidth.
+    remotePatterns: [
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/uploads/**" },
+    ],
+  },
   experimental: {
     // Must exceed the largest file any action accepts — menu import allows 12 MB
     // (src/lib/ai-import.ts). Too low a limit fails the upload in the framework

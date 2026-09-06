@@ -181,7 +181,7 @@ the Prisma client is created lazily on first query, so a host without
 | **Database** | A managed Postgres (Neon, Supabase, Vercel Postgres). Use the **pooled** connection string: serverless functions open many short-lived connections and a direct one exhausts Postgres. |
 | **Migrations** | `prisma generate` in the build does *not* apply migrations. Run `npx prisma migrate deploy` against the production database on each release. |
 | **`NEXT_PUBLIC_APP_URL`** | **Leave it unset when hosting.** `getAppOrigin()` then derives the origin from the incoming request, so QR codes carry your real domain. Setting it to a localhost value prints QR codes that point at localhost. |
-| **Image uploads** | `src/lib/storage.ts` writes to `public/uploads`, which works on a normal server but **not on serverless hosts** — their filesystem is read-only and `/tmp` is per-invocation. The module is the single storage boundary; swapping in S3 or similar means reimplementing `saveImage`/`deleteImage` and nothing else. Until then uploads fail with a clear message rather than a stack trace. |
+| **Image uploads** | `src/lib/storage.ts` picks its backend from the environment: Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set, otherwise `public/uploads`. Serverless filesystems are read-only and `/tmp` is per-invocation, so a deployment without the token cannot store images — it says so instead of throwing EROFS. Create the store under **Storage → Blob** in the Vercel dashboard; the token is set for you. Existing `/uploads/...` rows keep working: the stored value says which backend wrote it. |
 
 ## Deliberately not built
 
