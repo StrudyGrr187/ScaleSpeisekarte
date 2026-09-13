@@ -49,8 +49,11 @@ export function CustomerFilters({
   // would silently discard the status.
   const requested = React.useRef<string | null>(null);
   const current = searchParams.toString();
+  // Any committed URL ends the pending request — including one that differs
+  // from what was asked for (Back pressed mid-navigation). Waiting for an exact
+  // match left the ref stale forever in those cases.
   React.useEffect(() => {
-    if (requested.current === current) requested.current = null;
+    requested.current = null;
   }, [current]);
 
   React.useEffect(() => {
@@ -67,7 +70,8 @@ export function CustomerFilters({
       // replaces the current one, or every pause in a search would be a Back step.
       history: "push" | "replace" = "push"
     ) => {
-      const params = new URLSearchParams(requested.current ?? window.location.search.slice(1));
+      const base = requested.current ?? window.location.search.slice(1);
+      const params = new URLSearchParams(base);
       for (const [key, value] of Object.entries(patch)) {
         // Defaults stay out of the URL so the plain list keeps its plain address.
         const isDefault =
@@ -78,6 +82,9 @@ export function CustomerFilters({
         else params.set(key, value);
       }
       const next = params.toString();
+      // Re-selecting the active filter changes nothing; navigating anyway would
+      // leave a request behind that no URL change ever clears.
+      if (next === new URLSearchParams(base).toString()) return;
       requested.current = next;
       startTransition(() => {
         router[history](next ? `${pathname}?${next}` : pathname, { scroll: false });
