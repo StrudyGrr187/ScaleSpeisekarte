@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db";
 import { createSession, hashPassword } from "@/lib/auth";
 import { fail, guard, ok, zodFieldErrors, type ActionResult } from "@/lib/action-result";
 import { requirePlatformAdmin } from "@/lib/tenant";
-import { tenantCreateSchema, tenantPasswordSchema } from "@/lib/validation";
+import { suspendSchema, tenantCreateSchema, tenantPasswordSchema } from "@/lib/validation";
+import { startOfDayInZone } from "@/lib/suspension";
 import { slugify } from "@/lib/utils";
 
 /**
@@ -125,6 +126,87 @@ export async function deleteTenantAction(restaurantId: string): Promise<ActionRe
 
     revalidatePath("/platform");
     return ok(undefined, "Kunde gelöscht.");
+  });
+}
+
+/**
+ * Suspends a customer. Takes effect on the owner's next request and the next
+ * guest scan — see getCurrentUser and getPublicMenuBySlug.
+ */
+export async function suspendTenantAction(
+  _prev: ActionResult<undefined> | null,
+  formData: FormData
+): Promise<ActionResult<undefined>> {
+  return guard(async () => {
+    await requirePlatformAdmin();
+
+    const parsed = suspendSchema.safeParse({
+      restaurantId: formData.get("restaurantId"),
+      until: formData.get("until") ?? "",
+      reason: formData.get("reason") ?? "",
+    });
+    if (!parsed.success) {
+      return fail("Bitte prüfe deine Eingaben.", zodFieldErrors(parsed.error));
+    }
+
+    let suspendedUntil: Date | null = null;
+    if (parsed.data.until) {
+      suspendedUntil = startOfDayInZone(parsed.data.until);
+      if (!suspendedUntil) {
+        return fail("Bitte prüfe deine Eingaben.", { until: "Bitte ein gültiges Datum wählen." });
+      }
+      // The browser's `min` is advice; this is the rule. An end in the past
+      // would record a suspension that was never in force.
+      if (suspendedUntil <= new Date()) {
+        return fail("Bitte prüfe deine Eingaben.", {
+          until: "Das Datum muss in der Zukunft liegen — frühestens morgen.",
+        });
+      }
+    }
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: parsed.data.restaurantId },
+      select: { id: true },
+    });
+    if (!restaurant) return fail("Restaurant nicht gefunden.");
+
+    await prisma.restaurant.update({
+      where: { id: restaurant.id },
+      data: {
+        suspendedAt: new Date(),
+        suspendedUntil,
+        suspensionReason: parsed.data.reason,
+      },
+    });
+
+    revalidatePath("/platform");
+    revalidatePath(`/platform/${restaurant.id}`);
+    return ok(undefined, "Kunde gesperrt.");
+  });
+}
+
+export async function liftSuspensionAction(
+  restaurantId: string
+): Promise<ActionResult<undefined>> {
+  return guard(async () => {
+    await requirePlatformAdmin();
+
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { id: true },
+    });
+    if (!restaurant) return fail("Restaurant nicht gefunden.");
+
+    // Clear all three, not just suspendedAt: a leftover end date or note would
+    // resurface as stale data the next time the customer is suspended.
+    await prisma.restaurant.update({
+      where: { id: restaurant.id },
+      data: { suspendedAt: null, suspendedUntil: null, suspensionReason: null },
+    });
+
+    revalidatePath("/platform");
+    revalidatePath(`/platform/${restaurant.id}`);
+    return ok(undefined, "Sperre aufgehoben.");
   });
 }
 

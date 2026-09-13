@@ -5,6 +5,7 @@ import { cache } from "react";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/db";
+import { isSuspended } from "@/lib/suspension";
 
 const COOKIE_NAME = "scale_session";
 const SESSION_DAYS = 7;
@@ -109,6 +110,7 @@ export const getCurrentUser = cache(async () => {
       name: true,
       role: true,
       restaurantId: true,
+      restaurant: { select: { suspendedAt: true, suspendedUntil: true } },
     },
   });
 
@@ -116,12 +118,20 @@ export const getCurrentUser = cache(async () => {
   // tenant, treat the session as invalid rather than trusting the token.
   if (!user || user.restaurantId !== session.restaurantId) return null;
 
+  // A suspension must bite on the very next request, not at the next login:
+  // an owner with the admin open in a tab would otherwise keep saving. Every
+  // page and every server action resolves the user through here, so this one
+  // check covers them all. The platform admin has no restaurant of its own and
+  // can still enter a suspended customer to sort things out.
+  if (user.restaurant && isSuspended(user.restaurant)) return null;
+
   // Impersonation is a property of the role, not of the cookie: a forged
   // actingRestaurantId on an owner's token resolves to nothing.
   const actingRestaurantId =
     user.role === "PLATFORM_ADMIN" ? (session.actingRestaurantId ?? null) : null;
 
-  return { ...user, actingRestaurantId };
+  const { restaurant: _restaurant, ...rest } = user;
+  return { ...rest, actingRestaurantId };
 });
 
 export { COOKIE_NAME };

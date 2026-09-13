@@ -77,12 +77,24 @@ model Restaurant {
   // Onboarding state — drives the post-signup wizard.
   onboardedAt DateTime?
 
+  /// Set by the platform operator. While in force, the owner cannot sign in or
+  /// act on an open session, and the guest menu shows a neutral notice instead
+  /// of the dishes. Null means not suspended.
+  suspendedAt      DateTime?
+  /// Optional automatic end. Evaluated when read, so lifting it needs no
+  /// scheduler; null with suspendedAt set means "until lifted by hand".
+  suspendedUntil   DateTime?
+  /// Operator-only note. Never shown to the owner or to guests.
+  suspensionReason String?
+
   menus        Menu[]
   users        User[]
   openingHours OpeningHour[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 model OpeningHour {

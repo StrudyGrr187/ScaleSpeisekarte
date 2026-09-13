@@ -90,6 +90,18 @@ export const tenantPasswordSchema = z.object({
   password: passwordField,
 });
 
+/** Suspending a customer. Both fields are optional; the date is YYYY-MM-DD. */
+export const suspendSchema = z.object({
+  restaurantId: z.string().min(1),
+  until: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), {
+      message: "Bitte ein gültiges Datum wählen.",
+    }),
+  reason: optionalText(200),
+});
+
 export const restaurantSchema = z.object({
   name: z.string().trim().min(2, "Bitte einen Namen eingeben.").max(80),
   slug: z

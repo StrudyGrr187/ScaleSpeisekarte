@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { isSuspended } from "@/lib/suspension";
 import { createSession, destroySession, hashPassword, verifyPassword } from "@/lib/auth";
 import { fail, guard, ok, zodFieldErrors, type ActionResult } from "@/lib/action-result";
 import { loginSchema } from "@/lib/validation";
@@ -21,7 +22,13 @@ export async function loginAction(
 
     const user = await prisma.user.findUnique({
       where: { email: parsed.data.email.toLowerCase() },
-      select: { id: true, email: true, passwordHash: true, restaurantId: true },
+      select: {
+        id: true,
+        email: true,
+        passwordHash: true,
+        restaurantId: true,
+        restaurant: { select: { suspendedAt: true, suspendedUntil: true } },
+      },
     });
 
     // Always run a comparison so a missing account and a wrong password take
@@ -31,6 +38,15 @@ export async function loginAction(
 
     if (!user || !valid) {
       return fail("E-Mail oder Passwort ist falsch.");
+    }
+
+    // Checked only after the password: someone guessing addresses must not be
+    // able to learn which accounts exist, or which of them are suspended. The
+    // reason and end date stay with the operator.
+    if (user.restaurant && isSuspended(user.restaurant)) {
+      return fail(
+        "Dieses Konto ist vorübergehend gesperrt. Bitte wende dich an deinen Ansprechpartner."
+      );
     }
 
     await createSession({

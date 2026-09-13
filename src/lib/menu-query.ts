@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { isSuspended } from "@/lib/suspension";
 import type { ThemeKey } from "@/lib/themes";
 
 /**
@@ -158,13 +159,27 @@ async function allergenLegendFor(categories: PublicMenuCategory[]) {
   return rows;
 }
 
-/** Public menu by slug. Returns null when the slug is unknown. */
-export async function getPublicMenuBySlug(slug: string): Promise<PublicMenu | null> {
-  const restaurant = await prisma.restaurant.findUnique({
+export type PublicMenuResult =
+  | { status: "ok"; menu: PublicMenu }
+  /** Only the name: a suspended customer's menu, hours and contact stay hidden. */
+  | { status: "suspended"; restaurantName: string }
+  | { status: "not-found" };
+
+/** Public menu by slug. */
+export async function getPublicMenuBySlug(slug: string): Promise<PublicMenuResult> {
+  const row = await prisma.restaurant.findUnique({
     where: { slug },
-    select: restaurantSelect,
+    // The suspension fields are read to decide, then stripped below — this
+    // object is handed to a client component, and the operator's note must
+    // never be serialised into a guest's page. It is deliberately not selected.
+    select: { ...restaurantSelect, suspendedAt: true, suspendedUntil: true },
   });
-  if (!restaurant) return null;
+  if (!row) return { status: "not-found" };
+
+  const { suspendedAt, suspendedUntil, ...restaurant } = row;
+  if (isSuspended({ suspendedAt, suspendedUntil })) {
+    return { status: "suspended", restaurantName: restaurant.name };
+  }
 
   const menu = await prisma.menu.findFirst({
     where: { restaurantId: restaurant.id },
@@ -172,21 +187,24 @@ export async function getPublicMenuBySlug(slug: string): Promise<PublicMenu | nu
     select: { id: true, published: true },
   });
 
-  if (!menu) {
-    return { restaurant, categories: [], published: false, allergenLegend: [] };
-  }
-
-  // An unpublished menu resolves to an empty menu rather than leaking a draft.
-  if (!menu.published) {
-    return { restaurant, categories: [], published: false, allergenLegend: [] };
+  // No menu, or an unpublished one, resolves to an empty menu rather than
+  // leaking a draft.
+  if (!menu || !menu.published) {
+    return {
+      status: "ok",
+      menu: { restaurant, categories: [], published: false, allergenLegend: [] },
+    };
   }
 
   const categories = toCategories(await categoriesQuery(menu.id));
 
   return {
-    restaurant,
-    categories,
-    published: true,
-    allergenLegend: await allergenLegendFor(categories),
+    status: "ok",
+    menu: {
+      restaurant,
+      categories,
+      published: true,
+      allergenLegend: await allergenLegendFor(categories),
+    },
   };
 }

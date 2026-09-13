@@ -3,6 +3,7 @@ import { requireTenant } from "@/lib/tenant";
 import { isAiConfigured } from "@/lib/ai";
 import { SidebarNav } from "@/components/admin/sidebar-nav";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
+import { isSuspended } from "@/lib/suspension";
 import { ToastProvider } from "@/components/ui/toast";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           email={user.email}
         />
         <div className="lg:pl-[264px]">
-          {impersonating ? <ImpersonationBanner restaurantName={restaurant.name} /> : null}
+          {impersonating ? <ImpersonationBanner restaurantName={restaurant.name} suspended={isSuspended(restaurant)} /> : null}
           <main className="mx-auto max-w-builder px-5 pt-16 pb-10 lg:px-8 lg:pt-7">
             {children}
           </main>

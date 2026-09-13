@@ -9,6 +9,8 @@ import { buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/admin/page-header";
+import { formatDateInZone, isSuspended, todayInZone } from "@/lib/suspension";
+import { SuspensionCard } from "./suspension-card";
 import { TenantActions } from "./tenant-actions";
 
 export const metadata: Metadata = { title: "Kunde" };
@@ -26,6 +28,9 @@ export default async function TenantPage({ params }: { params: Promise<{ id: str
       createdAt: true,
       onboardedAt: true,
       menuTheme: true,
+      suspendedAt: true,
+      suspendedUntil: true,
+      suspensionReason: true,
       users: {
         where: { role: { not: "PLATFORM_ADMIN" } },
         select: { id: true, email: true, name: true, role: true },
@@ -45,6 +50,12 @@ export default async function TenantPage({ params }: { params: Promise<{ id: str
   ]);
 
   const owner = restaurant.users[0] ?? null;
+  const suspended = isSuspended(restaurant);
+
+  // Tomorrow as a calendar date. Pure date arithmetic on the zone's "today" —
+  // adding 24 hours to a timestamp skips a day across the spring DST change.
+  const [y, m, d] = todayInZone().split("-").map(Number);
+  const minDate = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 
   return (
     <>
@@ -58,11 +69,13 @@ export default async function TenantPage({ params }: { params: Promise<{ id: str
 
       <PageHeader
         title={restaurant.name}
-        description={`Angelegt am ${restaurant.createdAt.toLocaleDateString("de-DE")}${
+        description={`Angelegt am ${formatDateInZone(restaurant.createdAt)}${
           restaurant.onboardedAt ? "" : " · Einrichtung noch nicht abgeschlossen"
         }`}
         actions={
-          menu?.published ? (
+          suspended ? (
+            <Badge variant="danger">Gesperrt</Badge>
+          ) : menu?.published ? (
             <Badge variant="success">Veröffentlicht</Badge>
           ) : (
             <Badge variant="warning">Entwurf</Badge>
@@ -135,6 +148,16 @@ export default async function TenantPage({ params }: { params: Promise<{ id: str
           </CardBody>
         </Card>
       </div>
+
+      <SuspensionCard
+        restaurantId={restaurant.id}
+        restaurantName={restaurant.name}
+        suspended={suspended}
+        since={suspended && restaurant.suspendedAt ? formatDateInZone(restaurant.suspendedAt) : null}
+        until={suspended && restaurant.suspendedUntil ? formatDateInZone(restaurant.suspendedUntil) : null}
+        reason={suspended ? restaurant.suspensionReason : null}
+        minDate={minDate}
+      />
 
       <TenantActions
         restaurantId={restaurant.id}
