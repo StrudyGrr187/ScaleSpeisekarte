@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parsePrice } from "@/lib/money";
+import { startOfDayInZone } from "@/lib/suspension";
 
 /** Accepts anything an owner might type and yields integer cents. */
 const priceField = z
@@ -96,7 +97,8 @@ export const suspendSchema = z.object({
   until: z
     .string()
     .trim()
-    .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), {
+    // startOfDayInZone also rejects dates that do not exist, such as 2026-02-30.
+    .refine((v) => v === "" || startOfDayInZone(v) !== null, {
       message: "Bitte ein gültiges Datum wählen.",
     }),
   reason: optionalText(200),

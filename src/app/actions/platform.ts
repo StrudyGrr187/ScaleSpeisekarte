@@ -7,7 +7,7 @@ import { createSession, hashPassword } from "@/lib/auth";
 import { fail, guard, ok, zodFieldErrors, type ActionResult } from "@/lib/action-result";
 import { requirePlatformAdmin } from "@/lib/tenant";
 import { suspendSchema, tenantCreateSchema, tenantPasswordSchema } from "@/lib/validation";
-import { startOfDayInZone } from "@/lib/suspension";
+import { isSuspended, startOfDayInZone } from "@/lib/suspension";
 import { slugify } from "@/lib/utils";
 
 /**
@@ -166,14 +166,16 @@ export async function suspendTenantAction(
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: parsed.data.restaurantId },
-      select: { id: true },
+      select: { id: true, suspendedAt: true, suspendedUntil: true },
     });
     if (!restaurant) return fail("Restaurant nicht gefunden.");
 
     await prisma.restaurant.update({
       where: { id: restaurant.id },
       data: {
-        suspendedAt: new Date(),
+        // Re-suspending an already suspended customer changes end and note, but
+        // "suspended since" stays the day it actually started.
+        suspendedAt: isSuspended(restaurant) ? restaurant.suspendedAt : new Date(),
         suspendedUntil,
         suspensionReason: parsed.data.reason,
       },

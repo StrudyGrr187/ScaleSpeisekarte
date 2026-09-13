@@ -33,12 +33,16 @@ export default async function PlatformPage({ searchParams }: Props) {
   // cannot be counted as suspended in one query and as active in the next.
   const now = new Date();
 
+  // Prisma passes `contains` to ILIKE without escaping, so a search for "%" or
+  // "_" matched every customer. Escape the pattern characters to search for
+  // them literally; backslash is Postgres' default LIKE escape.
+  const literal = query.replace(/[\\%_]/g, "\\$&");
   const search: Prisma.RestaurantWhereInput = query
     ? {
         OR: [
-          { name: { contains: query, mode: "insensitive" } },
-          { slug: { contains: query, mode: "insensitive" } },
-          { users: { some: { email: { contains: query, mode: "insensitive" } } } },
+          { name: { contains: literal, mode: "insensitive" } },
+          { slug: { contains: literal, mode: "insensitive" } },
+          { users: { some: { email: { contains: literal, mode: "insensitive" } } } },
         ],
       }
     : {};
@@ -59,6 +63,9 @@ export default async function PlatformPage({ searchParams }: Props) {
   const [restaurants, totalCount, ...statusCounts] = await Promise.all([
     prisma.restaurant.findMany({
       where: { AND: [search, statusWhere[status]] },
+      // Dates sort in the database, on the createdAt index. Names cannot: the
+      // database collation does not know German, so those are ordered below.
+      orderBy: { createdAt: sort === "alt" ? "asc" : "desc" },
       select: {
         id: true,
         name: true,
@@ -89,18 +96,8 @@ export default async function PlatformPage({ searchParams }: Props) {
     gesperrt: statusCounts[3],
   };
 
-  restaurants.sort((a, b) => {
-    switch (sort) {
-      case "alt":
-        return a.createdAt.getTime() - b.createdAt.getTime();
-      case "name":
-        return collator.compare(a.name, b.name);
-      case "name-desc":
-        return collator.compare(b.name, a.name);
-      default:
-        return b.createdAt.getTime() - a.createdAt.getTime();
-    }
-  });
+  if (sort === "name") restaurants.sort((a, b) => collator.compare(a.name, b.name));
+  if (sort === "name-desc") restaurants.sort((a, b) => collator.compare(b.name, a.name));
 
   // Dish counts for the listed restaurants only, in one grouped query.
   const listedIds = restaurants.map((r) => r.id);
@@ -170,7 +167,11 @@ export default async function PlatformPage({ searchParams }: Props) {
                     : "In diesem Status gibt es gerade keine Kunden."
                 }
                 action={
-                  <Link href="/platform" className={buttonClasses("secondary", "md")}>
+                  // Same behaviour as the reset button above: filters go, the sort stays.
+                  <Link
+                    href={sort === "neu" ? "/platform" : `/platform?sort=${sort}`}
+                    className={buttonClasses("secondary", "md")}
+                  >
                     Filter zurücksetzen
                   </Link>
                 }

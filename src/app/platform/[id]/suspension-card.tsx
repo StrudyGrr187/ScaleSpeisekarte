@@ -83,14 +83,20 @@ function ActiveSuspension({ restaurantId, since, until, reason }: Props) {
           onClick={async () => {
             setLifting(true);
             setError(null);
-            const result = await liftSuspensionAction(restaurantId);
-            if (result.ok) {
-              toast(result.message ?? "Sperre aufgehoben.");
-              router.refresh();
-            } else {
-              setError(result.error);
+            try {
+              const result = await liftSuspensionAction(restaurantId);
+              if (result.ok) {
+                toast(result.message ?? "Sperre aufgehoben.");
+                router.refresh();
+              } else {
+                setError(result.error);
+              }
+            } catch {
+              // A dropped connection must not leave the button spinning forever.
+              setError("Die Sperre konnte nicht aufgehoben werden. Bitte erneut versuchen.");
+            } finally {
+              setLifting(false);
             }
-            setLifting(false);
           }}
         >
           <Unlock size={16} strokeWidth={1.75} aria-hidden />
@@ -107,6 +113,10 @@ function SuspendForm({ restaurantId, restaurantName, minDate }: Props) {
   const formRef = React.useRef<HTMLFormElement>(null);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [state, action, pending] = React.useActionState(suspendTenantAction, null);
+  // Controlled on purpose: React 19 resets a form after every action, failed
+  // ones included, so a rejected date would otherwise also erase the reason.
+  const [until, setUntil] = React.useState("");
+  const [reason, setReason] = React.useState("");
 
   React.useEffect(() => {
     if (state?.ok) {
@@ -162,6 +172,8 @@ function SuspendForm({ restaurantId, restaurantName, minDate }: Props) {
               name="until"
               type="date"
               min={minDate}
+              value={until}
+              onChange={(e) => setUntil(e.target.value)}
               invalid={Boolean(fieldErrors?.until)}
             />
           </Field>
@@ -171,6 +183,8 @@ function SuspendForm({ restaurantId, restaurantName, minDate }: Props) {
               id="reason"
               name="reason"
               maxLength={200}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               placeholder="z. B. Rechnung März offen"
               autoComplete="off"
               invalid={Boolean(fieldErrors?.reason)}

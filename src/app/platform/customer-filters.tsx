@@ -42,6 +42,17 @@ export function CustomerFilters({
   // trip can never overwrite the characters typed in the meantime.
   const lastPushed = React.useRef(query);
 
+  // The params of the navigation most recently *requested*. useSearchParams
+  // only reflects the last one that finished rendering, so building on it
+  // while a navigation is still loading drops that navigation's change: type,
+  // then pick a status within the debounce, and the late search replace
+  // would silently discard the status.
+  const requested = React.useRef<string | null>(null);
+  const current = searchParams.toString();
+  React.useEffect(() => {
+    if (requested.current === current) requested.current = null;
+  }, [current]);
+
   React.useEffect(() => {
     if (query !== lastPushed.current) {
       lastPushed.current = query;
@@ -56,7 +67,7 @@ export function CustomerFilters({
       // replaces the current one, or every pause in a search would be a Back step.
       history: "push" | "replace" = "push"
     ) => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(requested.current ?? window.location.search.slice(1));
       for (const [key, value] of Object.entries(patch)) {
         // Defaults stay out of the URL so the plain list keeps its plain address.
         const isDefault =
@@ -67,11 +78,12 @@ export function CustomerFilters({
         else params.set(key, value);
       }
       const next = params.toString();
+      requested.current = next;
       startTransition(() => {
         router[history](next ? `${pathname}?${next}` : pathname, { scroll: false });
       });
     },
-    [pathname, router, searchParams]
+    [pathname, router]
   );
 
   // Debounced: one navigation per pause in typing, not one per keystroke.

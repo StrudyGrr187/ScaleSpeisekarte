@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AppError } from "@/lib/action-result";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isSuspended } from "@/lib/suspension";
 
 /** Server Components: redirect to login when there is no valid session. */
 export async function requireUser() {
@@ -43,7 +44,18 @@ export async function requireTenant() {
 
   if (!restaurant) redirect(user.role === "PLATFORM_ADMIN" ? "/platform" : "/admin/login");
 
-  return { user, restaurant, impersonating: user.actingRestaurantId !== null };
+  // The suspension columns never leave this function. Callers hand `restaurant`
+  // straight to Client Components, which serialises every property into the
+  // page — and an expired suspension keeps its fields, so the operator's note
+  // would reach the owner the day the lock lifts. Callers get a boolean instead.
+  const { suspendedAt, suspendedUntil, suspensionReason: _reason, ...safeRestaurant } = restaurant;
+
+  return {
+    user,
+    restaurant: safeRestaurant,
+    impersonating: user.actingRestaurantId !== null,
+    suspended: isSuspended({ suspendedAt, suspendedUntil }),
+  };
 }
 
 /** Returns the restaurant's default menu, creating it lazily if it is missing. */

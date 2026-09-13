@@ -3,11 +3,10 @@ import { requireTenant } from "@/lib/tenant";
 import { isAiConfigured } from "@/lib/ai";
 import { SidebarNav } from "@/components/admin/sidebar-nav";
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
-import { isSuspended } from "@/lib/suspension";
 import { ToastProvider } from "@/components/ui/toast";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, restaurant, impersonating } = await requireTenant();
+  const { user, restaurant, impersonating, suspended } = await requireTenant();
 
   // A brand-new tenant goes through the starter wizard before seeing an empty
   // dashboard — an empty menu is where owners give up.
@@ -22,7 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           email={user.email}
         />
         <div className="lg:pl-[264px]">
-          {impersonating ? <ImpersonationBanner restaurantName={restaurant.name} suspended={isSuspended(restaurant)} /> : null}
+          {impersonating ? <ImpersonationBanner restaurantName={restaurant.name} suspended={suspended} /> : null}
           <main className="mx-auto max-w-builder px-5 pt-16 pb-10 lg:px-8 lg:pt-7">
             {children}
           </main>

@@ -81,8 +81,22 @@ export function startOfDayInZone(ymd: string, timeZone: string = PLATFORM_TIME_Z
 
 /** Today's date in the platform's zone, as YYYY-MM-DD — for the date input's `min`. */
 export function todayInZone(now: Date = new Date(), timeZone: string = PLATFORM_TIME_ZONE): string {
-  // en-CA formats as YYYY-MM-DD.
-  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(now);
+  // Assembled from parts: the formatted string's shape is locale data that ICU
+  // has changed before, and a surprise format here would crash the page.
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+/** The calendar day after `ymd`. Date arithmetic, not +24h, which skips a day at DST. */
+export function nextDay(ymd: string): string {
+  const [year, month, day] = ymd.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
 }
 
 export function formatDateInZone(date: Date, timeZone: string = PLATFORM_TIME_ZONE): string {
