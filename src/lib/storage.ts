@@ -42,7 +42,10 @@ const PRESETS: Record<ImageKind, { width: number; height: number; fit: "cover" |
 export class UploadError extends Error {}
 
 function blobConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN?.trim() ||
+    process.env.BLOB_STORE_ID?.trim()
+  );
 }
 
 /**
@@ -104,17 +107,20 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
 
 async function saveToBlob(filename: string, output: Buffer): Promise<string> {
   try {
+    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
     // addRandomSuffix stays off: the filename already carries random bytes, and
     // a predictable key is what makes deletion by stored URL possible.
     const blob = await blobPut(`uploads/${filename}`, output, {
       access: "public",
       contentType: "image/webp",
       addRandomSuffix: false,
+      ...(token ? { token } : {}),
     });
     return blob.url;
   } catch (error) {
     console.error("[storage] blob upload failed", error);
-    throw new UploadError("Das Bild konnte nicht gespeichert werden. Bitte erneut versuchen.");
+    const detail = error instanceof Error ? `: ${error.message}` : "";
+    throw new UploadError(`Das Bild konnte nicht gespeichert werden${detail}`);
   }
 }
 
@@ -159,7 +165,8 @@ export async function deleteImage(stored: string | null | undefined): Promise<vo
   if (!isBlobUrl(stored) || !blobConfigured()) return;
 
   try {
-    await blobDelete(stored);
+    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+    await blobDelete(stored, token ? { token } : undefined);
   } catch (error) {
     // Same rule as above: a failed cleanup must not roll back the edit that
     // replaced the image, or the owner is stuck with the old picture.
