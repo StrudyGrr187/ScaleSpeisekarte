@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
     // Exactly one host, and only over https. A wildcard here would turn
     // /_next/image into an open proxy paid for with our own bandwidth.
     remotePatterns: [
-      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/uploads/**" },
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/**" },
     ],
   },
   experimental: {
