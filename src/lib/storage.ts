@@ -108,9 +108,16 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
 async function saveToBlob(filename: string, output: Buffer): Promise<string> {
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+    // sharp's worker threads allocate Buffers backed by SharedArrayBuffer.
+    // fetch/undici in Node rejects SharedArrayBuffer for HTTP request bodies.
+    // Copying into a fresh ArrayBuffer guarantees a standard, unshared buffer.
+    const cleanArrayBuffer = new ArrayBuffer(output.byteLength);
+    new Uint8Array(cleanArrayBuffer).set(output);
+    const blobBody = new Blob([cleanArrayBuffer], { type: "image/webp" });
+
     // addRandomSuffix stays off: the filename already carries random bytes, and
     // a predictable key is what makes deletion by stored URL possible.
-    const blob = await blobPut(`uploads/${filename}`, output, {
+    const blob = await blobPut(`uploads/${filename}`, blobBody, {
       access: "public",
       contentType: "image/webp",
       addRandomSuffix: false,
