@@ -13,7 +13,7 @@ export default async function LoginPage() {
     <AuthShell
       title="Willkommen zurück"
       subtitle="Melde dich an, um deine Speisekarte zu bearbeiten."
-      footer="Zugänge werden vom Betreiber vergeben. Kein Konto? Melde dich bei uns."
+      footer="Noch keinen Zugang? Den richten wir für dich ein."
     >
       <LoginForm />
     </AuthShell>

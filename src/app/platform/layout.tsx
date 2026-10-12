@@ -3,6 +3,7 @@ import { Building2, LogOut, ShieldCheck } from "lucide-react";
 import { requirePlatformAdmin } from "@/lib/tenant";
 import { logoutAction } from "@/app/actions/auth";
 import { ToastProvider } from "@/components/ui/toast";
+import { Wordmark } from "@/components/brand/wordmark";
 
 /**
  * The operator surface. Deliberately not the tenant sidebar: a dark bar makes
@@ -17,10 +18,11 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         <header className="bg-[#17181c] text-white">
           <div className="mx-auto flex h-[60px] max-w-admin items-center justify-between gap-4 px-5 lg:px-8">
             <Link href="/platform" className="flex min-w-0 items-center gap-2.5">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-admin bg-white/10">
-                <ShieldCheck size={16} strokeWidth={2} aria-hidden />
+              <Wordmark tone="dark" className="text-[17px]" />
+              <span className="hidden items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[12px] font-semibold text-white/80 sm:inline-flex">
+                <ShieldCheck size={13} strokeWidth={2} aria-hidden />
+                Admin
               </span>
-              <span className="truncate text-admin-base font-semibold">Plattform-Verwaltung</span>
             </Link>
 
             <div className="flex items-center gap-1">

@@ -1,4 +1,4 @@
-/* ScaleSpeisekarte – Design Tokens
+/* ScaleMenu – Design Tokens
  * Import in app/globals.css:
  *   @import "tailwindcss";
  *   @import "../design/theme.css";
@@ -59,6 +59,13 @@
   --color-admin-success-soft: #ecfdf3;
   --color-admin-warning: #b54708;
   --color-admin-warning-soft: #fffaeb;
+
+  /* --- PRODUKT (Startseite, Wortmarke) – fest, nie Wirt-Farbe ---
+     scale auf guest-bg 5.2:1, weiss auf scale 5.4:1, scale-on-dark auf ink 6.6:1 */
+  --color-scale: #b4472a;
+  --color-scale-hover: #9a3b22;
+  --color-scale-soft: #f6e7e1;
+  --color-scale-on-dark: #e3826a;
 
   /* --- TYPOGRAFIE (Defaults; die Paarung ist pro Restaurant überschreibbar,
      siehe @theme inline weiter unten) --- */

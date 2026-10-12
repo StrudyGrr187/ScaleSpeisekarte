@@ -56,8 +56,8 @@ export function OnboardingWizard({ restaurantName }: { restaurantName: string })
           Womit fangen wir bei {restaurantName} an?
         </h1>
         <p className="mt-2 text-admin-base text-admin-muted">
-          Wähle eine Vorlage — wir legen passende Kategorien und Beispielgerichte an. Du änderst
-          danach nur noch Namen und Preise, statt alles neu zu tippen.
+          Die Vorlage legt Kategorien und Beispielgerichte an. Danach nur noch Namen und Preise
+          anpassen.
         </p>
 
         <ul className="mt-7 grid gap-3 sm:grid-cols-2">

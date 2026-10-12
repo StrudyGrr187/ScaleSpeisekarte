@@ -6,17 +6,19 @@ import { ImpersonationBanner } from "@/components/admin/impersonation-banner";
 import { ToastProvider } from "@/components/ui/toast";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, restaurant, impersonating, suspended } = await requireTenant();
+  const { user, restaurant, impersonating, suspended, canManage } = await requireTenant();
 
   // A brand-new tenant goes through the starter wizard before seeing an empty
-  // dashboard — an empty menu is where owners give up.
-  if (!restaurant.onboardedAt) redirect("/admin/onboarding");
+  // dashboard. The wizard builds categories, so it is the admin's to run; the
+  // restaurant's own login sees the empty overview until then.
+  if (!restaurant.onboardedAt && canManage) redirect("/admin/onboarding");
 
   return (
     <ToastProvider>
       <div className="min-h-dvh bg-admin-bg">
         <SidebarNav
           aiReady={isAiConfigured()}
+          canManage={canManage}
           restaurantName={restaurant.name}
           email={user.email}
         />

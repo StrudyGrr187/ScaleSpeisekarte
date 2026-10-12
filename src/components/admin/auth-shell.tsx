@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UtensilsCrossed } from "lucide-react";
+import { Wordmark } from "@/components/brand/wordmark";
 
 export function AuthShell({
   title,
@@ -18,12 +18,10 @@ export function AuthShell({
         <div className="w-full max-w-[420px]">
           <Link
             href="/"
-            className="mb-8 flex items-center gap-2.5 text-admin-ink transition-colors hover:text-admin-primary"
+            className="mb-8 inline-flex text-admin-ink"
+            aria-label="ScaleMenu Startseite"
           >
-            <span className="flex size-9 items-center justify-center rounded-admin bg-admin-primary text-white">
-              <UtensilsCrossed size={18} strokeWidth={2} aria-hidden />
-            </span>
-            <span className="text-admin-h2 font-semibold">ScaleSpeisekarte</span>
+            <Wordmark className="text-[22px]" />
           </Link>
 
           <div className="rounded-admin-lg border border-admin-border bg-admin-surface p-6 shadow-admin-card sm:p-7">

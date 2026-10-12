@@ -24,10 +24,10 @@ export default async function QrPage() {
     <>
       <PageHeader
         title="QR & NFC"
-        description="Ein Ziel für beides: QR-Code und NFC-Plakette zeigen auf dieselbe Adresse."
+        description="QR-Code und NFC-Plakette führen beide zu dieser Adresse."
         actions={
           menu.published ? (
-            <Badge variant="success">Veröffentlicht</Badge>
+            <Badge variant="success">Online</Badge>
           ) : (
             <Badge variant="warning">Entwurf</Badge>
           )
@@ -81,8 +81,8 @@ export default async function QrPage() {
 
               {!menu.published ? (
                 <p className="mt-4 rounded-admin border border-admin-warning/25 bg-admin-warning-soft px-3.5 py-3 text-admin-base text-admin-warning">
-                  Deine Karte ist noch nicht veröffentlicht. Der QR-Code funktioniert bereits —
-                  Gäste sehen aber nur einen Hinweis, bis du die Karte online stellst.
+                  Die Karte ist noch nicht online. Der Code funktioniert schon, Gäste sehen bis
+                  dahin den Hinweis „Karte in Arbeit“.
                 </p>
               ) : null}
             </CardBody>
@@ -92,18 +92,18 @@ export default async function QrPage() {
             <CardBody className="space-y-4">
               <InfoRow
                 icon={ShieldCheck}
-                title="Der Code bleibt gültig"
-                text="Der QR-Code enthält nur diese Adresse — nicht deine Gerichte. Du kannst die Karte beliebig ändern, ohne etwas neu zu drucken."
+                title="Einmal drucken"
+                text="Im Code steht nur die Adresse. Gerichte und Preise kannst du ändern, so oft du willst."
               />
               <InfoRow
                 icon={Nfc}
                 title="NFC-Plaketten"
-                text="Beschreibe eine NFC-Plakette mit exakt derselben Adresse als URL-Record. Gast tippt an, Karte öffnet sich — keine App nötig."
+                text="Plakette mit derselben Adresse als URL beschreiben. Antippen genügt, eine App braucht der Gast nicht."
               />
               <InfoRow
                 icon={QrCodeIcon}
                 title="Drucken"
-                text="Für Aufsteller und Aufkleber die SVG-Datei verwenden: sie bleibt in jeder Größe scharf. Mindestens 2 cm Kantenlänge und etwas weißer Rand ringsum."
+                text="Für Aufsteller und Aufkleber die SVG nehmen, sie bleibt in jeder Größe scharf. Mindestens 2 cm breit, mit weißem Rand."
               />
             </CardBody>
           </Card>

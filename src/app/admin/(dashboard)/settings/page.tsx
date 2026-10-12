@@ -10,11 +10,11 @@ import { PasswordForm } from "./password-form";
 export const metadata: Metadata = { title: "Einstellungen" };
 
 export default async function SettingsPage() {
-  const { user, restaurant } = await requireTenant();
+  const { user, restaurant, canManage } = await requireTenant();
 
   return (
     <>
-      <PageHeader title="Einstellungen" description="Dein Konto und dieser Zugang." />
+      <PageHeader title="Einstellungen" description="Konto, Passwort und Abmelden." />
 
       <div className="max-w-[560px] space-y-5">
         <Card>
@@ -25,7 +25,11 @@ export default async function SettingsPage() {
             <dl className="space-y-3">
               <Row label="Name" value={user.name ?? "—"} />
               <Row label="E-Mail" value={user.email} />
-              <Row label="Rolle" value={user.role === "OWNER" ? "Inhaber" : "Mitarbeiter"} />
+              <Row label="Rolle" value={canManage ? "Admin" : "Nutzer"} />
+              <Row
+                label="Darf ändern"
+                value={canManage ? "Alles" : "Gerichte und Bilder"}
+              />
               <Row label="Restaurant" value={restaurant.name} />
             </dl>
           </CardBody>
@@ -39,7 +43,7 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardBody>
             <p className="mb-4 text-admin-base text-admin-muted">
-              Meldet dich auf diesem Gerät ab. Die Speisekarte bleibt für Gäste erreichbar.
+              Meldet dich auf diesem Gerät ab. Für Gäste ändert sich nichts.
             </p>
             <form action={logoutAction}>
               <Button type="submit" variant="secondary">

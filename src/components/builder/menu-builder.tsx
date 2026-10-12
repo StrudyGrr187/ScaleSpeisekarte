@@ -47,7 +47,14 @@ import { cn } from "@/lib/utils";
 
 type Pending = { kind: "category" | "item"; id: string; name: string } | null;
 
-export function MenuBuilder({ initial }: { initial: BuilderData }) {
+export function MenuBuilder({
+  initial,
+  canManage,
+}: {
+  initial: BuilderData;
+  /** False for the restaurant's own login: dishes and pictures only. */
+  canManage: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
 
@@ -332,17 +339,25 @@ export function MenuBuilder({ initial }: { initial: BuilderData }) {
         <div className={cn("min-w-0", mobileTab === "preview" && "hidden xl:block")}>
           {data.categories.length === 0 ? (
             <div className="rounded-admin-lg border border-admin-border bg-admin-surface">
-              <EmptyState
-                icon={FolderPlus}
-                title="Noch keine Kategorien"
-                description="Fang mit einer Kategorie an — zum Beispiel „Vorspeisen“, „Hauptgerichte“ oder „Getränke“."
-                action={
-                  <Button onClick={() => setCategoryDraft({ category: null })}>
-                    <Plus size={16} strokeWidth={2} aria-hidden />
-                    Kategorie anlegen
-                  </Button>
-                }
-              />
+              {canManage ? (
+                <EmptyState
+                  icon={FolderPlus}
+                  title="Noch keine Kategorien"
+                  description="Zum Beispiel Vorspeisen, Hauptgerichte, Getränke."
+                  action={
+                    <Button onClick={() => setCategoryDraft({ category: null })}>
+                      <Plus size={16} strokeWidth={2} aria-hidden />
+                      Kategorie anlegen
+                    </Button>
+                  }
+                />
+              ) : (
+                <EmptyState
+                  icon={FolderPlus}
+                  title="Noch keine Kategorien"
+                  description="Sobald der Admin die Kategorien angelegt hat, trägst du hier deine Gerichte ein."
+                />
+              )}
             </div>
           ) : (
             <DndContext
@@ -389,6 +404,7 @@ export function MenuBuilder({ initial }: { initial: BuilderData }) {
                       }
                       categoryActions={categoryActions}
                       itemActions={itemActions}
+                      canManage={canManage}
                       dragging={activeDrag?.type === "category"}
                     />
                   ))}
@@ -405,7 +421,7 @@ export function MenuBuilder({ initial }: { initial: BuilderData }) {
             </DndContext>
           )}
 
-          {data.categories.length > 0 ? (
+          {data.categories.length > 0 && canManage ? (
             <Button
               variant="secondary"
               className="mt-4 w-full"
@@ -418,8 +434,7 @@ export function MenuBuilder({ initial }: { initial: BuilderData }) {
 
           <p className="mt-4 flex items-center gap-2 text-admin-sm text-admin-muted">
             <Eye size={15} strokeWidth={1.75} aria-hidden />
-            {totalItems} {totalItems === 1 ? "Gericht" : "Gerichte"} · Änderungen sind sofort in der
-            Gastansicht sichtbar.
+            {totalItems} {totalItems === 1 ? "Gericht" : "Gerichte"} · Gespeichert wird sofort.
           </p>
         </div>
 
@@ -439,7 +454,7 @@ export function MenuBuilder({ initial }: { initial: BuilderData }) {
       />
 
       <CategoryDialog
-        open={categoryDraft !== null}
+        open={canManage && categoryDraft !== null}
         category={categoryDraft?.category ?? null}
         onClose={() => setCategoryDraft(null)}
         onSaved={refresh}

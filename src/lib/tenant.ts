@@ -5,6 +5,7 @@ import { AppError } from "@/lib/action-result";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isSuspended } from "@/lib/suspension";
+import type { Role } from "@prisma/client";
 
 /** Server Components: redirect to login when there is no valid session. */
 export async function requireUser() {
@@ -55,7 +56,32 @@ export async function requireTenant() {
     restaurant: safeRestaurant,
     impersonating: user.actingRestaurantId !== null,
     suspended: isSuspended({ suspendedAt, suspendedUntil }),
+    canManage: canManage(user.role),
   };
+}
+
+/**
+ * Two levels inside a restaurant account. The restaurant's own login sees
+ * everything and edits dishes and pictures; the platform admin edits the rest —
+ * categories, look, restaurant details, publishing. Kept as one function so
+ * pages, navigation and actions cannot disagree about who may do what.
+ */
+export function canManage(role: Role): boolean {
+  return role === "PLATFORM_ADMIN";
+}
+
+/** Server Actions that change more than dishes and pictures. */
+export async function requireManager() {
+  const tenant = await requireTenant();
+  if (!tenant.canManage) throw new AppError("Das kann nur der Admin ändern.");
+  return tenant;
+}
+
+/** Admin-only pages: everyone else lands back on the overview. */
+export async function requireManagerPage() {
+  const tenant = await requireTenant();
+  if (!tenant.canManage) redirect("/admin");
+  return tenant;
 }
 
 /** Returns the restaurant's default menu, creating it lazily if it is missing. */

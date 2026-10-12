@@ -139,7 +139,8 @@ const cinzel = Cinzel({
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "600"],
+  // 700 carries the Scale[Menu] wordmark; 500/600 belong to the guest font pairs.
+  weight: ["500", "600", "700"],
   variable: "--font-spacegrotesk",
   display: "swap",
   preload: false,
@@ -198,11 +199,11 @@ const FONT_VARIABLES = [
 
 export const metadata: Metadata = {
   title: {
-    default: "ScaleSpeisekarte",
-    template: "%s · ScaleSpeisekarte",
+    default: "ScaleMenu",
+    template: "%s · ScaleMenu",
   },
   description:
-    "Digitale Speisekarten für Restaurants, Cafés und Bars — per QR-Code und NFC direkt auf das Handy des Gastes.",
+    "Digitale Speisekarten für Restaurants, Cafés und Bars. Per QR-Code und NFC aufs Handy, jederzeit aktuell.",
 };
 
 export const viewport: Viewport = {

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { fail, guard, ok, type ActionResult } from "@/lib/action-result";
-import { requireDefaultMenu, requireTenant } from "@/lib/tenant";
+import { requireDefaultMenu, requireManager } from "@/lib/tenant";
 import { findPreset } from "@/lib/cuisine-presets";
 import { normalizeHex } from "@/lib/color";
 
@@ -16,7 +16,7 @@ export async function applyPresetAction(
   accentColor?: string
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     const menu = await requireDefaultMenu(restaurant.id);
 
     const preset = findPreset(presetKey);
@@ -84,7 +84,7 @@ export async function applyPresetAction(
 /** Lets the owner skip the wizard without seeding anything. */
 export async function skipOnboardingAction(): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     await prisma.restaurant.update({
       where: { id: restaurant.id },
       data: { onboardedAt: new Date() },

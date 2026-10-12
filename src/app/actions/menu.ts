@@ -7,6 +7,7 @@ import {
   assertCategoryInTenant,
   assertItemInTenant,
   requireDefaultMenu,
+  requireManager,
   requireTenant,
 } from "@/lib/tenant";
 import { categorySchema, menuItemSchema } from "@/lib/validation";
@@ -26,7 +27,7 @@ export async function createCategoryAction(
   formData: FormData
 ): Promise<ActionResult<{ id: string }>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     const menu = await requireDefaultMenu(restaurant.id);
 
     const parsed = categorySchema.safeParse({
@@ -67,7 +68,7 @@ export async function updateCategoryAction(
   formData: FormData
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     await assertCategoryInTenant(categoryId, restaurant.id);
 
     const parsed = categorySchema.safeParse({
@@ -92,7 +93,7 @@ export async function renameCategoryAction(
   name: string
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     await assertCategoryInTenant(categoryId, restaurant.id);
 
     const trimmed = name.trim();
@@ -110,7 +111,7 @@ export async function toggleCategoryActiveAction(
   active: boolean
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     await assertCategoryInTenant(categoryId, restaurant.id);
     await prisma.category.update({ where: { id: categoryId }, data: { active } });
     revalidateAdmin();
@@ -120,7 +121,7 @@ export async function toggleCategoryActiveAction(
 
 export async function deleteCategoryAction(categoryId: string): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     await assertCategoryInTenant(categoryId, restaurant.id);
 
     // Collect image paths before the cascade removes the rows.
@@ -146,7 +147,7 @@ export async function deleteCategoryAction(categoryId: string): Promise<ActionRe
 
 export async function reorderCategoriesAction(ids: string[]): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
 
     // Only reorder ids that genuinely belong to this tenant, so a tampered
     // payload cannot touch another restaurant's rows.
@@ -452,7 +453,7 @@ export async function reorderItemsAction(
 
 export async function setPublishedAction(published: boolean): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     const menu = await requireDefaultMenu(restaurant.id);
 
     if (published) {

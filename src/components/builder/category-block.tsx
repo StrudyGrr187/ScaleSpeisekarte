@@ -27,6 +27,7 @@ export function CategoryBlock({
   categoryActions,
   itemActions,
   dragging,
+  canManage,
 }: {
   category: BuilderCategory;
   currency: string;
@@ -36,10 +37,13 @@ export function CategoryBlock({
   categoryActions: CategoryActions;
   itemActions: ItemRowActions;
   dragging: boolean;
+  /** Structure (name, order, settings, deletion) is the admin's; dishes are everyone's. */
+  canManage: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category.id,
     data: { type: "category" },
+    disabled: !canManage,
   });
 
   const itemIds = React.useMemo(() => category.items.map((i) => i.id), [category.items]);
@@ -59,15 +63,17 @@ export function CategoryBlock({
       )}
     >
       <header className="flex h-[52px] items-center gap-2 rounded-t-admin-lg border-b border-admin-border bg-admin-surface-2 px-3">
-        <button
-          type="button"
-          aria-label={`${category.name}: Position ändern`}
-          className="flex size-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-admin text-admin-border-strong hover:text-admin-muted active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical size={16} strokeWidth={1.75} aria-hidden />
-        </button>
+        {canManage ? (
+          <button
+            type="button"
+            aria-label={`${category.name}: Position ändern`}
+            className="flex size-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-admin text-admin-border-strong hover:text-admin-muted active:cursor-grabbing"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical size={16} strokeWidth={1.75} aria-hidden />
+          </button>
+        ) : null}
 
         <button
           type="button"
@@ -86,12 +92,18 @@ export function CategoryBlock({
 
         <CategoryIcon icon={category.icon} size={16} className="shrink-0 text-admin-muted" />
 
-        <InlineEdit
-          value={category.name}
-          ariaLabel={`Name der Kategorie ${category.name}`}
-          onCommit={(next) => categoryActions.onRename(category.id, next)}
-          className="min-w-0 flex-1 text-admin-h2 font-semibold text-admin-ink"
-        />
+        {canManage ? (
+          <InlineEdit
+            value={category.name}
+            ariaLabel={`Name der Kategorie ${category.name}`}
+            onCommit={(next) => categoryActions.onRename(category.id, next)}
+            className="min-w-0 flex-1 text-admin-h2 font-semibold text-admin-ink"
+          />
+        ) : (
+          <h2 className="min-w-0 flex-1 truncate text-admin-h2 font-semibold text-admin-ink">
+            {category.name}
+          </h2>
+        )}
 
         {!category.active ? (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-admin-bg px-2 py-0.5 text-[11px] font-semibold tracking-[0.04em] text-admin-muted uppercase">
@@ -113,27 +125,29 @@ export function CategoryBlock({
           Gericht
         </button>
 
-        <Dropdown
-          label={`Aktionen für ${category.name}`}
-          items={[
-            {
-              label: "Kategorie bearbeiten",
-              icon: Pencil,
-              onSelect: () => categoryActions.onEdit(category.id),
-            },
-            {
-              label: "Gericht hinzufügen",
-              icon: Plus,
-              onSelect: () => categoryActions.onAddItem(category.id),
-            },
-            {
-              label: "Kategorie löschen",
-              icon: Trash2,
-              danger: true,
-              onSelect: () => categoryActions.onDelete(category.id),
-            },
-          ]}
-        />
+        {canManage ? (
+          <Dropdown
+            label={`Aktionen für ${category.name}`}
+            items={[
+              {
+                label: "Kategorie bearbeiten",
+                icon: Pencil,
+                onSelect: () => categoryActions.onEdit(category.id),
+              },
+              {
+                label: "Gericht hinzufügen",
+                icon: Plus,
+                onSelect: () => categoryActions.onAddItem(category.id),
+              },
+              {
+                label: "Kategorie löschen",
+                icon: Trash2,
+                danger: true,
+                onSelect: () => categoryActions.onDelete(category.id),
+              },
+            ]}
+          />
+        ) : null}
       </header>
 
       {showItems ? (

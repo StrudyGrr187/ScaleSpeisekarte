@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, QrCode } from "lucide-react";
+import { ArrowRight, ExternalLink, QrCode } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { requireDefaultMenu, requireTenant } from "@/lib/tenant";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
-import { PublishToggle } from "@/components/admin/publish-toggle";
+import { PublishStatus } from "@/components/admin/publish-status";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = { title: "Übersicht" };
 
 export default async function DashboardPage() {
-  const { restaurant } = await requireTenant();
+  const { restaurant, canManage } = await requireTenant();
   const menu = await requireDefaultMenu(restaurant.id);
 
   const [categoryCount, itemCount, hiddenCount, soldOutCount] = await Promise.all([
@@ -33,10 +33,14 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={restaurant.name}
-        description="Übersicht über deine digitale Speisekarte."
+        description={
+          menu.published
+            ? `Deine Karte ist online unter /menu/${restaurant.slug}.`
+            : "Deine Karte ist noch nicht online."
+        }
         actions={
           <>
-            <PublishToggle published={menu.published} />
+            <PublishStatus published={menu.published} canManage={canManage} />
             <Link href="/admin/builder" className={buttonClasses("primary", "md")}>
               Speisekarte bearbeiten
               <ArrowRight size={16} strokeWidth={2} aria-hidden />
@@ -46,32 +50,6 @@ export default async function DashboardPage() {
       />
 
       <div className="space-y-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>Status</CardTitle>
-            {menu.published ? (
-              <Badge variant="success">Veröffentlicht</Badge>
-            ) : (
-              <Badge variant="warning">Entwurf</Badge>
-            )}
-          </CardHeader>
-          <CardBody>
-            <p className="text-admin-base text-admin-muted">
-              {menu.published
-                ? "Deine Karte ist öffentlich erreichbar. Änderungen im Builder sind sofort für Gäste sichtbar — du musst nicht erneut veröffentlichen."
-                : "Deine Karte ist noch nicht öffentlich. Gäste sehen unter deiner Adresse einen Hinweis, dass die Karte in Arbeit ist."}
-            </p>
-
-            {/* Address and QR code live on one page only, so there is a single
-                place to look for the thing that gets printed. */}
-            <Link href="/admin/qr" className={buttonClasses("secondary", "md", "mt-4")}>
-              <QrCode size={16} strokeWidth={1.75} aria-hidden />
-              Adresse, QR-Code &amp; NFC
-              <ArrowRight size={16} strokeWidth={2} aria-hidden />
-            </Link>
-          </CardBody>
-        </Card>
-
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map((stat) => (
             <Card key={stat.label}>
@@ -86,6 +64,42 @@ export default async function DashboardPage() {
             </Card>
           ))}
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Für Gäste</CardTitle>
+            {menu.published ? (
+              <Badge variant="success">Online</Badge>
+            ) : (
+              <Badge variant="warning">Entwurf</Badge>
+            )}
+          </CardHeader>
+          <CardBody>
+            <p className="text-admin-base text-admin-muted">
+              {menu.published
+                ? "Was du speicherst, sehen Gäste beim nächsten Scan."
+                : "Wer den QR-Code scannt, sieht im Moment den Hinweis „Karte in Arbeit“."}
+            </p>
+
+            {/* Address and QR code live on one page only, so there is a single
+                place to look for the thing that gets printed. */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/admin/qr" className={buttonClasses("secondary", "md")}>
+                <QrCode size={16} strokeWidth={1.75} aria-hidden />
+                QR-Code &amp; NFC
+              </Link>
+              <a
+                href={`/menu/${restaurant.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonClasses("ghost", "md")}
+              >
+                <ExternalLink size={16} strokeWidth={1.75} aria-hidden />
+                Gastansicht öffnen
+              </a>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </>
   );

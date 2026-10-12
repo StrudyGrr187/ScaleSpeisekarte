@@ -8,10 +8,10 @@ import { OnboardingWizard } from "./wizard";
 export const metadata: Metadata = { title: "Erste Schritte" };
 
 export default async function OnboardingPage() {
-  const { restaurant, impersonating, suspended } = await requireTenant();
+  const { restaurant, impersonating, suspended, canManage } = await requireTenant();
 
-  // Already set up — nothing to do here.
-  if (restaurant.onboardedAt) redirect("/admin");
+  // Already set up, or not the admin's session — nothing to do here.
+  if (restaurant.onboardedAt || !canManage) redirect("/admin");
 
   return (
     <ToastProvider>

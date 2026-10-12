@@ -4,12 +4,12 @@ import { getBuilderData } from "@/lib/builder-query";
 import { requireDefaultMenu, requireTenant } from "@/lib/tenant";
 import { MenuBuilder } from "@/components/builder/menu-builder";
 import { PageHeader } from "@/components/admin/page-header";
-import { PublishToggle } from "@/components/admin/publish-toggle";
+import { PublishStatus } from "@/components/admin/publish-status";
 
 export const metadata: Metadata = { title: "Speisekarte" };
 
 export default async function BuilderPage() {
-  const { restaurant } = await requireTenant();
+  const { restaurant, canManage } = await requireTenant();
   const menu = await requireDefaultMenu(restaurant.id);
   const data = await getBuilderData(restaurant.id, menu.id);
 
@@ -19,10 +19,14 @@ export default async function BuilderPage() {
     <>
       <PageHeader
         title="Speisekarte"
-        description="Kategorien und Gerichte per Drag & Drop ordnen. Namen und Preise lassen sich direkt in der Zeile ändern."
-        actions={<PublishToggle published={data.published} />}
+        description={
+          canManage
+            ? "Namen und Preise direkt in der Zeile ändern, Reihenfolge per Ziehen."
+            : "Namen und Preise direkt in der Zeile ändern. Fotos und Details über das Stift-Symbol."
+        }
+        actions={<PublishStatus published={data.published} canManage={canManage} />}
       />
-      <MenuBuilder initial={data} />
+      <MenuBuilder initial={data} canManage={canManage} />
     </>
   );
 }

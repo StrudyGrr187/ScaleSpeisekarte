@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { fail, guard, ok, type ActionResult } from "@/lib/action-result";
-import { requireDefaultMenu, requireTenant } from "@/lib/tenant";
+import { requireDefaultMenu, requireManager } from "@/lib/tenant";
 import { extractMenuFromFile, type ImportResult } from "@/lib/ai-import";
 import { suggestTheme, type ThemeSuggestion } from "@/lib/ai-theme";
 import { parsePrice } from "@/lib/money";
@@ -17,7 +17,7 @@ export async function analyzeMenuFileAction(
   formData: FormData
 ): Promise<ActionResult<ImportResult>> {
   return guard(async () => {
-    await requireTenant();
+    await requireManager();
 
     const file = formData.get("file");
     if (!(file instanceof File)) return fail("Keine Datei erhalten.");
@@ -64,7 +64,7 @@ export async function commitImportAction(
   payload: unknown
 ): Promise<ActionResult<{ categories: number; items: number }>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     const menu = await requireDefaultMenu(restaurant.id);
 
     const parsed = commitSchema.safeParse(payload);
@@ -128,7 +128,7 @@ export async function suggestThemeAction(
   prompt: string
 ): Promise<ActionResult<ThemeSuggestion>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
     const suggestion = await suggestTheme(prompt, restaurant.name);
     return ok(suggestion);
   });

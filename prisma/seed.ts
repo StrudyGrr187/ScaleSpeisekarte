@@ -400,7 +400,7 @@ async function seedDemoRestaurant() {
 }
 
 async function main() {
-  console.log("Seeding ScaleSpeisekarte…");
+  console.log("Seeding ScaleMenu…");
   await seedReferenceData();
   const { email } = await seedDemoRestaurant();
   console.log("\nDone. Demo login:");

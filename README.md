@@ -1,4 +1,4 @@
-# ScaleSpeisekarte
+# ScaleMenu
 
 Multi-tenant SaaS for digital restaurant menus. An owner builds a menu in the admin,
 publishes it, and guests reach it by scanning a QR code or tapping an NFC plate —
@@ -62,6 +62,22 @@ failing when clicked.
 | `npm run db:studio` | Prisma Studio |
 
 ## Architecture
+
+### Who may change what
+
+Two levels inside a restaurant account, decided by `canManage()` in
+[`src/lib/tenant.ts`](src/lib/tenant.ts):
+
+| | Restaurant login (`OWNER`/`STAFF`) | Admin (`PLATFORM_ADMIN`, inside the account) |
+| --- | --- | --- |
+| Dishes: add, edit, price, "heute aus", order, delete | ✓ | ✓ |
+| Pictures: dish photos, logo, cover | ✓ | ✓ |
+| Categories, look, restaurant details, opening hours, publishing, import | sees, cannot change | ✓ |
+
+The check runs in the server actions (`requireManager()`), not only in the UI —
+hiding a button is a courtesy, the action refusing is the rule. Admin-only pages
+show their content read-only with a lock note, except the import, which needs
+`requireManagerPage()` and sends everyone else back to the overview.
 
 ### Tenant isolation
 
@@ -187,5 +203,5 @@ the Prisma client is created lazily on first query, so a host without
 ## Deliberately not built
 
 Ordering/payments, AI-generated allergens (a liability risk), multi-language,
-time-scheduled menus, analytics charts, staff roles, and a theme builder. The
+time-scheduled menus, analytics charts, per-employee staff roles, and a theme builder. The
 schema and the tenant boundary leave room for all of them.

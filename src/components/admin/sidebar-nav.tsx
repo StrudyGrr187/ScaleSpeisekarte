@@ -26,12 +26,14 @@ type NavItem = {
   exact?: boolean;
   /** Hidden while no Claude key is configured — the page would be a dead end. */
   needsAi?: boolean;
+  /** Only the admin can act on this page, so nobody else sees it in the list. */
+  adminOnly?: boolean;
 };
 
 const NAV: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { href: "/admin", label: "Übersicht", icon: LayoutDashboard, exact: true },
   { href: "/admin/builder", label: "Speisekarte", icon: UtensilsCrossed },
-  { href: "/admin/import", label: "Karte importieren", icon: Sparkles, needsAi: true },
+  { href: "/admin/import", label: "Karte importieren", icon: Sparkles, needsAi: true, adminOnly: true },
   { href: "/admin/design", label: "Design", icon: Palette },
   { href: "/admin/restaurant", label: "Restaurant", icon: Store },
   { href: "/admin/qr", label: "QR & NFC", icon: QrCode },
@@ -42,10 +44,12 @@ export function SidebarNav({
   restaurantName,
   email,
   aiReady,
+  canManage,
 }: {
   restaurantName: string;
   email: string;
   aiReady: boolean;
+  canManage: boolean;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
@@ -111,7 +115,9 @@ export function SidebarNav({
             Verwaltung
           </p>
           <ul className="space-y-0.5">
-            {NAV.filter((item) => aiReady || !item.needsAi).map((item) => {
+            {NAV.filter(
+              (item) => (aiReady || !item.needsAi) && (canManage || !item.adminOnly)
+            ).map((item) => {
               const active = item.exact
                 ? pathname === item.href
                 : pathname.startsWith(item.href);
@@ -143,9 +149,14 @@ export function SidebarNav({
         </nav>
 
         <div className="border-t border-admin-border p-3">
-          <p className="truncate px-3 pb-2 text-admin-sm text-admin-muted" title={email}>
-            {email}
-          </p>
+          <div className="flex items-center justify-between gap-2 px-3 pb-2">
+            <p className="truncate text-admin-sm text-admin-muted" title={email}>
+              {email}
+            </p>
+            <span className="shrink-0 rounded-full bg-admin-bg px-2 py-0.5 text-[11px] font-semibold text-admin-muted">
+              {canManage ? "Admin" : "Nutzer"}
+            </span>
+          </div>
           <form action={logoutAction}>
             <button
               type="submit"

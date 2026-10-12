@@ -45,8 +45,7 @@ export function CreateTenantForm() {
         </CardHeader>
         <CardBody>
           <p className="text-admin-base text-admin-muted">
-            Diese Zugangsdaten werden nur jetzt angezeigt — das Passwort ist ab sofort nur noch
-            als Hash gespeichert und lässt sich nicht wieder auslesen, nur neu setzen.
+            Nur jetzt sichtbar. Später lässt sich das Passwort nur neu setzen, nicht auslesen.
           </p>
 
           <dl className="mt-4 space-y-2">

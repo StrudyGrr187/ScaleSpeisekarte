@@ -71,8 +71,7 @@ function ActiveSuspension({ restaurantId, since, until, reason }: Props) {
         </dl>
 
         <p className="mt-4 text-admin-sm text-admin-muted">
-          Der Wirt kann sich nicht anmelden, und Gäste sehen statt der Karte einen neutralen
-          Hinweis. Gerichte, Einstellungen und QR-Codes bleiben unverändert erhalten.
+          Login gesperrt, Gäste sehen einen neutralen Hinweis. Daten und QR-Codes bleiben.
         </p>
 
         <FormError>{error}</FormError>
@@ -138,9 +137,8 @@ function SuspendForm({ restaurantId, restaurantName, minDate }: Props) {
       </CardHeader>
       <CardBody>
         <p className="text-admin-base text-admin-muted">
-          Sperrt den Zugang des Wirts und nimmt die Gastkarte offline — zum Beispiel bei einer
-          offenen Rechnung. Nichts wird gelöscht: Nach dem Entsperren ist alles wie vorher, und
-          gedruckte QR-Codes funktionieren wieder.
+          Login und Gastkarte offline, etwa bei einer offenen Rechnung. Nach dem Entsperren ist
+          alles wie vorher.
         </p>
 
         <form
@@ -206,8 +204,8 @@ function SuspendForm({ restaurantId, restaurantName, minDate }: Props) {
         title={`${restaurantName} sperren?`}
       >
         <p className="text-admin-base text-admin-muted">
-          Ab sofort sehen Gäste beim Scannen nur „Die Speisekarte ist gerade nicht verfügbar". Der
-          Wirt wird abgemeldet und kann sich nicht mehr anmelden, bis die Sperre endet.
+          Gäste sehen ab sofort „Die Speisekarte ist gerade nicht verfügbar“. Der Kunde wird
+          abgemeldet, bis die Sperre endet.
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="ghost" disabled={pending} onClick={() => setConfirmOpen(false)}>

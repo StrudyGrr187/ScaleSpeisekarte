@@ -12,7 +12,7 @@ export default async function NewTenantPage() {
     <>
       <PageHeader
         title="Kunde anlegen"
-        description="Restaurant und Login in einem Schritt. Die Zugangsdaten siehst du danach einmal — gib sie dem Kunden weiter."
+        description="Restaurant und Login in einem Schritt. Die Zugangsdaten danach an den Kunden weitergeben."
       />
       <CreateTenantForm />
     </>

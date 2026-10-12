@@ -144,7 +144,7 @@ export default async function PlatformPage({ searchParams }: Props) {
         <EmptyState
           icon={Store}
           title="Noch keine Kunden"
-          description="Lege das erste Restaurant an. Du bekommst danach Zugangsdaten, die du weitergeben kannst."
+          description="Das erste Restaurant anlegen und die Zugangsdaten weitergeben."
           action={
             <Link href="/platform/new" className={buttonClasses("primary", "md")}>
               <Plus size={16} strokeWidth={2} aria-hidden />

@@ -129,8 +129,7 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
             </CardHeader>
             <CardBody>
               <p className="mb-3 text-admin-base text-admin-muted">
-                Beschreibe dein Lokal in einem Satz. Die KI schlägt Farbe, Schrift und Theme vor —
-                übernommen wird nichts, bis du speicherst.
+                Ein Satz zum Lokal genügt. Der Vorschlag landet in der Vorschau, nicht auf der Karte.
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
@@ -199,10 +198,8 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
           <CardBody>
             {isPrint ? (
               <p className="mb-4 rounded-admin border border-admin-border bg-admin-bg px-3.5 py-3 text-admin-base text-admin-muted">
-                „{resolveTheme(look.menuTheme).label}" ist eine Druck-Darstellung: Name,
-                Beschreibung und Preis stehen bewusst in einer einzigen Buchschrift (EB Garamond),
-                so wie auf einer gedruckten Karte. Von der Auswahl unten wirkt hier nur die
-                Grundschrift.
+                „{resolveTheme(look.menuTheme).label}“ setzt Gerichte in EB Garamond wie eine
+                gedruckte Karte. Von der Auswahl unten gilt hier nur die Grundschrift.
               </p>
             ) : null}
             <ul
@@ -308,8 +305,7 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
             ) : weakAccent ? (
               <p className="mt-2 flex items-start gap-1.5 text-admin-sm text-admin-warning">
                 <AlertTriangle size={14} strokeWidth={2} aria-hidden className="mt-0.5 shrink-0" />
-                Sehr helle Farbe. Texte werden automatisch abgedunkelt, als Akzent wirkt sie aber
-                schwach.
+                Sehr hell: Texte werden abgedunkelt, als Akzent fällt sie kaum auf.
               </p>
             ) : null}
           </CardBody>

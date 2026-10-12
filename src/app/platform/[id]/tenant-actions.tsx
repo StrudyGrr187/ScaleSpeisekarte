@@ -65,8 +65,8 @@ export function TenantActions({
           </CardHeader>
           <CardBody>
             <p className="text-admin-base text-admin-muted">
-              Öffnet die Speisekarte dieses Kunden in der normalen Verwaltung — dieselben Werkzeuge,
-              die der Kunde selbst hat. Ein Banner erinnert dich daran, in wessen Konto du bist.
+              Öffnet die Verwaltung dieses Restaurants mit allen Admin-Rechten. Der Kunde selbst
+              ändert dort nur Gerichte und Bilder.
             </p>
             <form action={() => impersonateAction(restaurantId)} className="mt-4">
               <Button type="submit">
@@ -155,8 +155,8 @@ export function TenantActions({
         </CardHeader>
         <CardBody>
           <p className="text-admin-base text-admin-muted">
-            Löscht das Restaurant mit Karte, Gerichten und allen Zugängen. Gedruckte QR-Codes
-            zeigen danach ins Leere. Das lässt sich nicht rückgängig machen.
+            Restaurant, Karte und Zugänge werden gelöscht, gedruckte QR-Codes führen ins Leere.
+            Nicht umkehrbar.
           </p>
           <Button variant="danger" className="mt-4" onClick={() => setConfirmOpen(true)}>
             <Trash2 size={16} strokeWidth={1.75} aria-hidden />
@@ -171,8 +171,7 @@ export function TenantActions({
         title={`${restaurantName} löschen?`}
       >
         <p className="text-admin-base text-admin-muted">
-          Tippe zur Bestätigung den Namen des Restaurants ein. Karte, Gerichte, Bilder und Zugänge
-          werden entfernt.
+          Zur Bestätigung den Namen des Restaurants eintippen.
         </p>
         <FormError>{deleteError}</FormError>
         <Field label="Name des Restaurants" htmlFor="confirmName" className="mt-4">

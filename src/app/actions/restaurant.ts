@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { fail, guard, ok, zodFieldErrors, type ActionResult } from "@/lib/action-result";
-import { assertCategoryInTenant, assertItemInTenant, requireTenant } from "@/lib/tenant";
+import { assertCategoryInTenant, assertItemInTenant, requireManager, requireTenant } from "@/lib/tenant";
 import { z } from "zod";
 import { openingHoursSchema, restaurantSchema } from "@/lib/validation";
 import { deleteImage, saveImage, UploadError, type ImageKind } from "@/lib/storage";
@@ -21,7 +21,7 @@ export async function updateRestaurantAction(
   formData: FormData
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
 
     const parsed = restaurantSchema.safeParse({
       name: formData.get("name"),
@@ -67,7 +67,7 @@ export async function updateOpeningHoursAction(
   formData: FormData
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
 
     const hours = Array.from({ length: 7 }, (_, dayOfWeek) => {
       const closed = formData.get(`closed-${dayOfWeek}`) === "true";
@@ -109,7 +109,7 @@ export async function updateOpeningHoursAction(
  */
 export async function uploadImageAction(formData: FormData): Promise<ActionResult<{ url: string }>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant, canManage } = await requireTenant();
 
     const kind = String(formData.get("kind") ?? "") as ImageKind;
     const targetId = String(formData.get("targetId") ?? "");
@@ -119,6 +119,10 @@ export async function uploadImageAction(formData: FormData): Promise<ActionResul
     if (!["logo", "cover", "item", "category"].includes(kind)) {
       return fail("Unbekannter Bildtyp.");
     }
+
+    // Dish photos, logo and cover belong to the restaurant's own login; category
+    // pictures are part of the menu's structure, which only the admin changes.
+    if (kind === "category" && !canManage) return fail("Das kann nur der Admin ändern.");
 
     // Verify ownership *before* writing anything to disk.
     if (kind === "item") await assertItemInTenant(targetId, restaurant.id);
@@ -164,7 +168,8 @@ export async function removeImageAction(
   targetId: string
 ): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant, canManage } = await requireTenant();
+    if (kind === "category" && !canManage) return fail("Das kann nur der Admin ändern.");
 
     if (kind === "logo") {
       await deleteImage(restaurant.logo);
@@ -213,7 +218,7 @@ const lookSchema = z.object({
 
 export async function applyLookAction(input: unknown): Promise<ActionResult<undefined>> {
   return guard(async () => {
-    const { restaurant } = await requireTenant();
+    const { restaurant } = await requireManager();
 
     const parsed = lookSchema.safeParse(input);
     if (!parsed.success) {

@@ -140,7 +140,7 @@ export function ImportWizard() {
                     Karte wird gelesen…
                   </span>
                   <span className="max-w-[42ch] text-admin-sm text-admin-muted">
-                    Das dauert je nach Umfang 15–45 Sekunden. Bitte das Fenster offen lassen.
+                    15–45 Sekunden. Fenster bitte offen lassen.
                   </span>
                   {file ? (
                     <span className="mt-1 flex items-center gap-1.5 text-admin-sm text-admin-muted">
@@ -161,8 +161,7 @@ export function ImportWizard() {
                     PDF oder Foto auswählen
                   </span>
                   <span className="max-w-[46ch] text-admin-sm text-admin-muted">
-                    Am besten das Original-PDF. Ein Foto funktioniert auch — gerade halten, gutes
-                    Licht, Text scharf. Maximal 12 MB.
+                    Original-PDF oder ein scharfes, gerades Foto. Bis 12 MB.
                   </span>
                 </>
               )}
@@ -171,12 +170,11 @@ export function ImportWizard() {
             <ul className="mt-5 space-y-2 text-admin-sm text-admin-muted">
               <li className="flex gap-2">
                 <ScanText size={15} strokeWidth={1.75} aria-hidden className="mt-0.5 shrink-0" />
-                Namen, Beschreibungen und Preise werden wörtlich übernommen — nichts wird
-                umformuliert.
+                Namen, Beschreibungen und Preise kommen wörtlich so, wie sie gedruckt sind.
               </li>
               <li className="flex gap-2">
                 <AlertTriangle size={15} strokeWidth={1.75} aria-hidden className="mt-0.5 shrink-0" />
-                Allergene werden nur übernommen, wenn sie auf der Karte stehen. Geraten wird nie.
+                Allergene nur, wenn sie auf der Karte stehen.
               </li>
             </ul>
           </CardBody>
@@ -197,8 +195,7 @@ export function ImportWizard() {
               {draft.length === 1 ? "Kategorie" : "Kategorien"} erkannt
             </p>
             <p className="mt-1 text-admin-sm text-admin-muted">
-              Prüfe die Daten und korrigiere, was nicht stimmt. Übernommene Gerichte sind zunächst
-              ausgeblendet — Gäste sehen sie erst, wenn du sie freigibst.
+              Korrigiere, was nicht stimmt. Neue Gerichte bleiben ausgeblendet, bis du sie freigibst.
             </p>
             {unparsed > 0 ? (
               <p className="mt-2 flex items-center gap-1.5 text-admin-sm text-admin-warning">
