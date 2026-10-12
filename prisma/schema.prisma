@@ -21,6 +21,7 @@ enum Role {
 /// design/theme.css plus an entry in src/lib/themes.ts; the components only ever
 /// branch on the two layout archetypes, never on the individual theme.
 enum MenuTheme {
+  CUSTOM
   MODERN
   CLASSIC
   MINIMAL
@@ -58,6 +59,7 @@ model Restaurant {
   address     String?
   phone       String?
   website     String?
+  googleReviewUrl String?
 
   // Branding. accentColor is the single colour the owner picks; foreground is derived
   // from its luminance at render time, never stored, so it can never be unreadable.
@@ -73,6 +75,9 @@ model Restaurant {
   menuTheme MenuTheme @default(MODERN)
   /// Key into FONT_PAIRS (src/lib/fonts.ts) — never a raw font name.
   fontPair  String    @default("playfair-karla")
+  /// Guest text scale selected by the owner: small, normal or large.
+  fontSize  String    @default("normal")
+  customTheme Json?
 
   // Onboarding state — drives the post-signup wizard.
   onboardedAt DateTime?

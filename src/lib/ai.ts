@@ -1,31 +1,50 @@
 import "server-only";
 
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import { AppError } from "@/lib/action-result";
 
-/**
- * Shared Claude client. AI features are optional: without a key the app runs
- * exactly as before and the UI hides them, rather than failing at click time.
- */
-
-export const AI_MODEL = "claude-opus-5";
+// Flash-Lite is cheaper and typically has more available capacity than the
+// flagship Flash model while still supporting images, PDFs and JSON schemas.
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 export function isAiConfigured(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+  return Boolean(process.env.GEMINI_API_KEY?.trim());
 }
 
 export class AiNotConfiguredError extends AppError {
   constructor() {
-    super("Die KI-Funktionen sind auf diesem Server nicht eingerichtet.");
+    super(
+      "Die KI-Funktionen sind auf diesem Server nicht eingerichtet (GEMINI_API_KEY nicht gefunden)."
+    );
   }
 }
 
-const globalForAi = globalThis as unknown as { anthropic?: Anthropic };
+const globalForAi = globalThis as unknown as {
+  gemini?: GoogleGenAI;
+};
 
-export function getAiClient(): Anthropic {
-  if (!isAiConfigured()) throw new AiNotConfiguredError();
-  globalForAi.anthropic ??= new Anthropic();
-  return globalForAi.anthropic;
+export function getGeminiClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) throw new AiNotConfiguredError();
+  globalForAi.gemini ??= new GoogleGenAI({ apiKey });
+  return globalForAi.gemini;
+}
+
+/** Retries short-lived provider overloads before surfacing an error to the UI. */
+export async function generateWithRetry<T>(operation: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt >= 2 || !isTemporaryProviderError(error)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 700 * 2 ** attempt));
+    }
+  }
+}
+
+function isTemporaryProviderError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("503") || message.includes("UNAVAILABLE") || message.includes("high demand");
 }
 
 /**
@@ -36,17 +55,33 @@ export function toAiError(error: unknown): AppError {
   if (error instanceof AppError) return error;
   console.error("[ai]", error);
 
-  if (error instanceof Anthropic.AuthenticationError) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (
+    message.includes("API key not valid") ||
+    message.includes("API_KEY_INVALID") ||
+    message.includes("401")
+  ) {
     return new AppError("Der KI-Zugang wurde abgelehnt. Bitte den API-Key prüfen.");
   }
-  if (error instanceof Anthropic.RateLimitError) {
-    return new AppError("Die KI ist gerade ausgelastet. Bitte in einer Minute erneut versuchen.");
+  if (
+    message.includes("RESOURCE_EXHAUSTED") ||
+    message.includes("429")
+  ) {
+    return new AppError("Das Kontingent der KI ist gerade erschöpft oder ausgelastet. Bitte in einer Minute erneut versuchen.");
   }
-  if (error instanceof Anthropic.APIConnectionError) {
+  if (
+    message.includes("503") ||
+    message.includes("UNAVAILABLE") ||
+    message.includes("high demand")
+  ) {
+    return new AppError("Die KI ist momentan stark ausgelastet. Bitte in Kürze erneut versuchen.");
+  }
+  if (
+    message.includes("ENOTFOUND") ||
+    message.includes("fetch failed")
+  ) {
     return new AppError("Keine Verbindung zur KI. Bitte Internetverbindung prüfen.");
   }
-  if (error instanceof Anthropic.APIError) {
-    return new AppError("Die KI konnte die Anfrage nicht verarbeiten. Bitte erneut versuchen.");
-  }
-  return new AppError("Die KI-Anfrage ist fehlgeschlagen. Bitte erneut versuchen.");
+  return new AppError(`Die KI-Anfrage ist fehlgeschlagen: ${message}`);
 }

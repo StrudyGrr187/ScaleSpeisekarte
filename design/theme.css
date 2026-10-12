@@ -595,3 +595,105 @@
   --shadow-guest-card: 0 1px 3px rgb(30 60 40 / 0.06);
   --spacing-row: 1.5rem;
 }
+
+/* -- MODERN: warm, raised menu cards -------------------------------- */
+[data-guest-theme="modern"] {
+  --color-guest-bg: #fbf9f6;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #f4f1ec;
+  --color-guest-border: #e8e2da;
+  --color-guest-border-strong: #d6cfc6;
+  --radius-guest-sm: 10px;
+  --radius-guest: 16px;
+  --radius-guest-lg: 22px;
+  --shadow-guest-card: 0 2px 8px rgb(80 60 40 / 0.08);
+  --shadow-guest-raise: 0 12px 28px -14px rgb(80 60 40 / 0.2);
+  --spacing-section: 2.5rem;
+}
+
+/* -- CLASSIC: formal, spacious newspaper-like print ----------------- */
+[data-guest-theme="classic"] {
+  --color-guest-bg: #fbf9f6;
+  --color-guest-surface: #fbf9f6;
+  --color-guest-surface-2: #f2eee6;
+  --text-cat--letter-spacing: 0.06em;
+  --spacing-section: 3.35rem;
+  --container-menu: 34rem;
+}
+
+/* -- BISTRO: compact French café card ------------------------------- */
+[data-guest-theme="bistro"] {
+  --text-cat--letter-spacing: 0.18em;
+  --text-item: 1.125rem;
+  --spacing-row: 1rem;
+  --container-menu: 28rem;
+}
+
+/* -- LEINEN: soft, editorial fine-dining card ------------------------ */
+[data-guest-theme="linen"] {
+  --color-guest-bg: #f4f1ea;
+  --color-guest-surface: #f4f1ea;
+  --color-guest-surface-2: #eae5da;
+  --text-cat--letter-spacing: 0.1em;
+  --text-item: 1.25rem;
+  --spacing-row: 1.9rem;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgb(120 105 80 / 0.025) 0 1px,
+    transparent 1px 5px
+  );
+}
+
+/* -- GARTEN: organic green, generous and friendly ------------------- */
+[data-guest-theme="garden"] {
+  --color-guest-bg: #f7faf6;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #eaf1e7;
+  --color-guest-border: #d9e8d5;
+  --color-guest-border-strong: #b9d2b4;
+  --radius-guest-sm: 12px;
+  --radius-guest: 20px;
+  --radius-guest-lg: 28px;
+  --shadow-guest-card: 0 3px 12px rgb(38 90 48 / 0.09);
+  --shadow-guest-raise: 0 14px 32px -16px rgb(38 90 48 / 0.22);
+  --spacing-row: 1.55rem;
+  --spacing-section: 2.8rem;
+}
+
+/* -- KRÄFTIG: graphic black-and-white street-food poster ------------- */
+[data-guest-theme="bold"] {
+  --color-guest-bg: #f4f4f2;
+  --color-guest-surface: #ffffff;
+  --color-guest-surface-2: #e8e8e4;
+  --color-guest-border: #111111;
+  --color-guest-border-strong: #111111;
+  --text-cat: 1.5rem;
+  --text-cat--line-height: 1.75rem;
+  --text-item: 1.1875rem;
+  --text-cat--letter-spacing: 0.04em;
+  --spacing-section: 2.25rem;
+}
+
+/* Owner-controlled guest text size. Kept after every theme block so the
+   setting changes readability without erasing a theme's visual identity. */
+[data-guest-font-size="small"] {
+  --text-hero: 1.75rem;
+  --text-hero--line-height: 2rem;
+  --text-cat: 1.2rem;
+  --text-cat--line-height: 1.5rem;
+  --text-item: 1rem;
+  --text-item--line-height: 1.35rem;
+  --text-body: 1rem;
+  --text-body--line-height: 1.4375rem;
+}
+
+[data-guest-font-size="large"] {
+  --text-hero: 2.25rem;
+  --text-hero--line-height: 2.6rem;
+  --text-cat: 1.55rem;
+  --text-cat--line-height: 1.9rem;
+  --text-item: 1.3rem;
+  --text-item--line-height: 1.75rem;
+  --text-body: 1.125rem;
+  --text-body--line-height: 1.65rem;
+}

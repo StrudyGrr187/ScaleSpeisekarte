@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import type { BuilderData } from "@/lib/builder-types";
+import { resolveFontSize, type CustomTheme } from "@/lib/themes";
 
 /** Loads everything the builder needs in one round trip, scoped to the tenant. */
 export async function getBuilderData(
@@ -21,11 +22,14 @@ export async function getBuilderData(
         address: true,
         phone: true,
         website: true,
+        googleReviewUrl: true,
         primaryColor: true,
         currency: true,
         locale: true,
         menuTheme: true,
         fontPair: true,
+        fontSize: true,
+        customTheme: true,
         openingHours: {
           orderBy: { dayOfWeek: "asc" },
           select: { dayOfWeek: true, closed: true, opensAt: true, closesAt: true },
@@ -77,7 +81,11 @@ export async function getBuilderData(
   if (!restaurant || !menu) return null;
 
   return {
-    restaurant,
+    restaurant: {
+      ...restaurant,
+      fontSize: resolveFontSize(restaurant.fontSize),
+      customTheme: restaurant.customTheme as CustomTheme | null,
+    },
     published: menu.published,
     allergens,
     dietaryTags,

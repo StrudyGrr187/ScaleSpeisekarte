@@ -111,15 +111,21 @@ export async function setTenantPasswordAction(
   });
 }
 
-export async function deleteTenantAction(restaurantId: string): Promise<ActionResult<undefined>> {
+export async function deleteTenantAction(
+  restaurantId: string,
+  confirmationName: string
+): Promise<ActionResult<undefined>> {
   return guard(async () => {
     await requirePlatformAdmin();
 
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (!restaurant) return fail("Restaurant nicht gefunden.");
+    if (confirmationName.trim() !== restaurant.name) {
+      return fail("Bitte den exakten Namen des Restaurants zur Bestätigung eingeben.");
+    }
 
     // Menus, categories, items, users and opening hours all cascade.
     await prisma.restaurant.delete({ where: { id: restaurant.id } });

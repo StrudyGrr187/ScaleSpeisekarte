@@ -12,7 +12,14 @@ import { Input } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { builderToPublic, type BuilderData } from "@/lib/builder-types";
 import { contrastRatio, deriveAccentTokens, normalizeHex } from "@/lib/color";
-import { MENU_THEMES, resolveTheme, type ThemeKey } from "@/lib/themes";
+import {
+  DEFAULT_CUSTOM_THEME,
+  MENU_THEMES,
+  resolveTheme,
+  type CustomTheme,
+  type GuestFontSize,
+  type ThemeKey,
+} from "@/lib/themes";
 import { FONT_PAIRS, type FontPairKey } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { ThemeCard } from "./theme-card";
@@ -31,7 +38,9 @@ const PRESET_COLORS = [
 type Look = {
   menuTheme: ThemeKey;
   fontPair: FontPairKey;
+  fontSize: GuestFontSize;
   primaryColor: string;
+  customTheme: CustomTheme | null;
 };
 
 export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boolean }) {
@@ -42,7 +51,9 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
     () => ({
       menuTheme: data.restaurant.menuTheme,
       fontPair: (data.restaurant.fontPair as FontPairKey) ?? "playfair-karla",
+      fontSize: data.restaurant.fontSize ?? "normal",
       primaryColor: data.restaurant.primaryColor,
+      customTheme: data.restaurant.customTheme ?? null,
     }),
     [data.restaurant]
   );
@@ -59,6 +70,8 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
   const dirty =
     look.menuTheme !== saved.menuTheme ||
     look.fontPair !== saved.fontPair ||
+    look.fontSize !== saved.fontSize ||
+    JSON.stringify(look.customTheme) !== JSON.stringify(saved.customTheme) ||
     look.primaryColor.toLowerCase() !== saved.primaryColor.toLowerCase();
 
   // The preview renders the guest menu through the same components as the
@@ -72,6 +85,8 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
         primaryColor: look.primaryColor,
         menuTheme: look.menuTheme,
         fontPair: look.fontPair,
+        fontSize: look.fontSize,
+        customTheme: look.customTheme,
       },
     };
   }, [data, look]);
@@ -80,7 +95,7 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
   const weakAccent = normalized ? contrastRatio(normalized, "#ffffff") < 3 : false;
   const tokens = deriveAccentTokens(normalized ?? saved.primaryColor);
 
-  const suggest = async () => {
+  const suggest = async (custom = false) => {
     setSuggesting(true);
     setRationale(null);
     const result = await suggestThemeAction(prompt);
@@ -92,9 +107,11 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
     }
 
     setLook({
-      menuTheme: result.data.menuTheme,
+      menuTheme: custom ? "CUSTOM" : result.data.menuTheme,
       fontPair: result.data.fontPair,
+      fontSize: look.fontSize,
       primaryColor: result.data.accentColor,
+      customTheme: custom ? result.data.customTheme : null,
     });
     setRationale(result.data.rationale);
     if (result.data.colorAdjusted) {
@@ -145,7 +162,7 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
                   }}
                 />
                 <Button
-                  onClick={suggest}
+                  onClick={() => void suggest(false)}
                   disabled={suggesting || prompt.trim().length < 3}
                   className="shrink-0"
                 >
@@ -160,6 +177,14 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
                       Vorschlag
                     </>
                   )}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => void suggest(true)}
+                  disabled={suggesting || prompt.trim().length < 3}
+                  className="shrink-0"
+                >
+                  {suggesting ? "Wird erstellt…" : "Eigenes Theme"}
                 </Button>
               </div>
 
@@ -184,10 +209,16 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
                   theme={theme}
                   active={look.menuTheme === theme.key}
                   accent={tokens.accent}
-                  onSelect={() => setLook((l) => ({ ...l, menuTheme: theme.key }))}
+                  onSelect={() => setLook((l) => ({ ...l, menuTheme: theme.key, customTheme: null }))}
                 />
               ))}
             </div>
+            {look.menuTheme === "CUSTOM" ? (
+              <div className="mt-3 rounded-admin border border-admin-primary-border bg-admin-primary-soft px-3.5 py-3 text-admin-sm text-[#3730a3]">
+                <p className="font-semibold">{look.customTheme?.name ?? DEFAULT_CUSTOM_THEME.name}</p>
+                <p className="mt-0.5">{look.customTheme?.mood ?? DEFAULT_CUSTOM_THEME.mood}</p>
+              </div>
+            ) : null}
           </CardBody>
         </Card>
 
@@ -243,6 +274,32 @@ export function DesignPanel({ data, aiReady }: { data: BuilderData; aiReady: boo
                 );
               })}
             </ul>
+            <div className="mt-5 border-t border-admin-border pt-4">
+              <p className="text-admin-base font-semibold text-admin-ink">Schriftgröße</p>
+              <p className="mt-1 text-admin-sm text-admin-muted">Passe die Lesbarkeit der Gastkarte an.</p>
+              <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Schriftgröße">
+                {([
+                  ["small", "Klein"],
+                  ["normal", "Normal"],
+                  ["large", "Groß"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={look.fontSize === value}
+                    onClick={() => setLook((l) => ({ ...l, fontSize: value }))}
+                    className={cn(
+                      "rounded-admin border px-3 py-2 text-admin-sm font-semibold",
+                      look.fontSize === value
+                        ? "border-admin-primary bg-admin-primary-soft text-admin-primary"
+                        : "border-admin-border-strong bg-white text-admin-ink-2 hover:bg-[#f9fafb]"
+                    )}
+                  >
+                    <span className={value === "small" ? "text-[12px]" : value === "large" ? "text-[17px]" : "text-[14px]"}>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardBody>
         </Card>
 

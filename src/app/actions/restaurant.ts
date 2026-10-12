@@ -10,6 +10,7 @@ import { deleteImage, saveImage, UploadError, type ImageKind } from "@/lib/stora
 import { FONT_PAIR_KEYS } from "@/lib/fonts";
 import { THEME_KEYS, type ThemeKey } from "@/lib/themes";
 import { normalizeHex } from "@/lib/color";
+import { Prisma } from "@prisma/client";
 
 function revalidateAll(slug: string) {
   revalidatePath("/admin", "layout");
@@ -30,6 +31,7 @@ export async function updateRestaurantAction(
       address: formData.get("address") ?? "",
       phone: formData.get("phone") ?? "",
       website: formData.get("website") ?? "",
+      googleReviewUrl: formData.get("googleReviewUrl") ?? "",
       currency: formData.get("currency"),
     });
     if (!parsed.success) {
@@ -205,10 +207,27 @@ export async function removeImageAction(
  * Values are checked against the closed registries, never trusted as given.
  */
 const lookSchema = z.object({
-  menuTheme: z.enum(THEME_KEYS as [string, ...string[]]),
+  menuTheme: z.enum([...THEME_KEYS, "CUSTOM"] as unknown as [string, ...string[]]),
   // Closed registry: a font key the app cannot resolve would render as the
   // browser default, so it must never reach the database.
   fontPair: z.enum(FONT_PAIR_KEYS as [string, ...string[]]),
+  fontSize: z.enum(["small", "normal", "large"]),
+  customTheme: z
+    .object({
+      name: z.string().trim().min(1).max(60),
+      mood: z.string().trim().min(1).max(120),
+      background: z.string().regex(/^#[0-9a-f]{6}$/i),
+      surface: z.string().regex(/^#[0-9a-f]{6}$/i),
+      surfaceAlt: z.string().regex(/^#[0-9a-f]{6}$/i),
+      ink: z.string().regex(/^#[0-9a-f]{6}$/i),
+      muted: z.string().regex(/^#[0-9a-f]{6}$/i),
+      border: z.string().regex(/^#[0-9a-f]{6}$/i),
+      borderStrong: z.string().regex(/^#[0-9a-f]{6}$/i),
+      radius: z.number().int().min(0).max(28),
+      density: z.enum(["tight", "normal", "airy"]),
+    })
+    .nullable()
+    .optional(),
   primaryColor: z
     .string()
     .transform((v) => normalizeHex(v))
@@ -225,11 +244,18 @@ export async function applyLookAction(input: unknown): Promise<ActionResult<unde
       return fail(parsed.error.issues[0]?.message ?? "Ungültige Auswahl.");
     }
 
+    const customTheme =
+      parsed.data.menuTheme === "CUSTOM"
+        ? parsed.data.customTheme ?? Prisma.JsonNull
+        : Prisma.JsonNull;
+
     await prisma.restaurant.update({
       where: { id: restaurant.id },
       data: {
         menuTheme: parsed.data.menuTheme as ThemeKey,
         fontPair: parsed.data.fontPair,
+        fontSize: parsed.data.fontSize,
+        customTheme,
         ...(parsed.data.primaryColor ? { primaryColor: parsed.data.primaryColor } : {}),
       },
     });

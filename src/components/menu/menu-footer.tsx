@@ -96,6 +96,21 @@ export function MenuFooter({
         ) : null}
       </address>
 
+      {restaurant.googleReviewUrl ? (
+        <a
+          href={restaurant.googleReviewUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "mt-7 flex h-11 items-center justify-center gap-2 rounded-full border border-guest-border-strong bg-guest-surface px-4 text-[14px] font-semibold text-guest-ink-2 active:bg-guest-surface-2",
+            classic && "mx-auto max-w-[280px]"
+          )}
+        >
+          <Star size={16} className="fill-current text-brand-text" aria-hidden />
+          Uns auf Google bewerten
+        </a>
+      ) : null}
+
       <p
         data-chrome
         className={cn("mt-8 text-[13px] text-guest-muted", classic && "text-center")}

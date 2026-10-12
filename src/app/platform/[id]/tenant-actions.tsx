@@ -193,7 +193,7 @@ export function TenantActions({
             onClick={async () => {
               setDeleting(true);
               setDeleteError(null);
-              const result = await deleteTenantAction(restaurantId);
+              const result = await deleteTenantAction(restaurantId, confirmName);
               if (result.ok) {
                 router.push("/platform");
                 router.refresh();

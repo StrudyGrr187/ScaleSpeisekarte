@@ -12,7 +12,7 @@ import { MenuItemRow } from "@/components/menu/menu-item-row";
 import { useScrollSpy } from "@/components/menu/use-scroll-spy";
 import { accentStyle } from "@/lib/color";
 import { fontStyle } from "@/lib/fonts";
-import { resolveTheme, themeAttribute } from "@/lib/themes";
+import { customThemeStyle, resolveTheme, themeAttribute } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 /**
@@ -171,9 +171,11 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
     <div
       data-guest-root
       data-guest-theme={themeAttribute(restaurant.menuTheme)}
+      data-guest-font-size={restaurant.fontSize}
       style={
         {
           ...accentStyle(restaurant.primaryColor, restaurant.menuTheme),
+          ...(restaurant.menuTheme === "CUSTOM" ? customThemeStyle(restaurant.customTheme) : {}),
           ...fontStyle(restaurant.fontPair, archetype),
         } as React.CSSProperties
       }

@@ -19,6 +19,7 @@ type Restaurant = {
   address: string | null;
   phone: string | null;
   website: string | null;
+  googleReviewUrl: string | null;
   currency: string;
   logo: string | null;
   coverImage: string | null;
@@ -127,6 +128,21 @@ export function RestaurantForm({
               type="url"
               placeholder="https://…"
               defaultValue={restaurant.website ?? ""}
+            />
+          </Field>
+
+          <Field
+            label="Google-Bewertungslink"
+            htmlFor="googleReviewUrl"
+            hint="optional — erscheint als Button in der Gastansicht"
+            error={fieldErrors?.googleReviewUrl}
+          >
+            <Input
+              id="googleReviewUrl"
+              name="googleReviewUrl"
+              type="url"
+              placeholder="https://g.page/r/.../review"
+              defaultValue={restaurant.googleReviewUrl ?? ""}
             />
           </Field>
         </CardBody>

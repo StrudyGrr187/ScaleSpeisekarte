@@ -17,6 +17,7 @@
  */
 
 export type ThemeKey =
+  | "CUSTOM"
   | "MODERN"
   | "CLASSIC"
   | "MINIMAL"
@@ -30,6 +31,39 @@ export type ThemeKey =
 
 export type Archetype = "list" | "print";
 export type ThemeMode = "light" | "dark";
+export type GuestFontSize = "small" | "normal" | "large";
+
+export type CustomTheme = {
+  name: string;
+  mood: string;
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  ink: string;
+  muted: string;
+  border: string;
+  borderStrong: string;
+  radius: number;
+  density: Density;
+};
+
+export const DEFAULT_CUSTOM_THEME: CustomTheme = {
+  name: "Eigener Look",
+  mood: "Individuell gestaltet",
+  background: "#fbf9f6",
+  surface: "#ffffff",
+  surfaceAlt: "#f4f1ec",
+  ink: "#1a1614",
+  muted: "#6b625c",
+  border: "#e8e2da",
+  borderStrong: "#d6cfc6",
+  radius: 14,
+  density: "normal",
+};
+
+export function resolveFontSize(value: string | null | undefined): GuestFontSize {
+  return value === "small" || value === "large" ? value : "normal";
+}
 /** How much air the theme puts between rows — mirrors its spacing tokens. */
 export type Density = "tight" | "normal" | "airy";
 
@@ -159,10 +193,46 @@ export const THEME_KEYS = MENU_THEMES.map((t) => t.key);
 export const DEFAULT_THEME: ThemeKey = "MODERN";
 
 export function resolveTheme(key: string | null | undefined): MenuThemeDef {
+  if (key === "CUSTOM") {
+    return {
+      key: "CUSTOM",
+      label: "Eigener Look",
+      mood: "Individuell gestaltet",
+      archetype: "list",
+      mode: "light",
+      paper: DEFAULT_CUSTOM_THEME.background,
+      card: DEFAULT_CUSTOM_THEME.surface,
+      density: DEFAULT_CUSTOM_THEME.density,
+    };
+  }
   return MENU_THEMES.find((t) => t.key === key) ?? MENU_THEMES[0];
 }
 
 /** The value that goes on the wrapper as data-guest-theme. */
 export function themeAttribute(key: string | null | undefined): string {
   return resolveTheme(key).key.toLowerCase();
+}
+
+export function customThemeStyle(theme: CustomTheme | null | undefined): Record<string, string> {
+  const value = theme ?? DEFAULT_CUSTOM_THEME;
+  const radius = `${value.radius}px`;
+  const density = { tight: "1rem", normal: "1.375rem", airy: "1.75rem" }[value.density];
+  const section = { tight: "2.5rem", normal: "3rem", airy: "3.75rem" }[value.density];
+  return {
+    "--color-guest-bg": value.background,
+    "--color-guest-surface": value.surface,
+    "--color-guest-surface-2": value.surfaceAlt,
+    "--color-guest-ink": value.ink,
+    "--color-guest-ink-2": value.muted,
+    "--color-guest-muted": value.muted,
+    "--color-guest-faint": value.borderStrong,
+    "--color-guest-border": value.border,
+    "--color-guest-border-strong": value.borderStrong,
+    "--radius-guest-sm": `${Math.max(2, Math.round(value.radius * 0.55))}px`,
+    "--radius-guest": radius,
+    "--radius-guest-lg": `${Math.round(value.radius * 1.35)}px`,
+    "--radius-guest-sheet": `${Math.round(value.radius * 1.6)}px`,
+    "--spacing-row": density,
+    "--spacing-section": section,
+  };
 }

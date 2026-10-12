@@ -120,6 +120,7 @@ export const restaurantSchema = z.object({
   address: optionalText(200),
   phone: optionalText(50),
   website: websiteField,
+  googleReviewUrl: websiteField,
   currency: z.enum(["EUR", "CHF", "GBP", "USD"]),
 });
 

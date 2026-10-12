@@ -75,7 +75,7 @@ export default async function PlatformPage({ searchParams }: Props) {
         suspendedUntil: true,
         users: {
           where: { role: { not: "PLATFORM_ADMIN" } },
-          select: { email: true },
+          select: { name: true, email: true },
           orderBy: { createdAt: "asc" },
         },
         menus: { select: { published: true }, orderBy: { createdAt: "asc" }, take: 1 },
@@ -209,7 +209,7 @@ export default async function PlatformPage({ searchParams }: Props) {
                             /menu/{restaurant.slug}
                           </p>
                           <p className="mt-0.5 truncate text-admin-sm text-admin-muted">
-                            {owner?.email ?? "kein Zugang"}
+                            {owner ? `${owner.name ? `${owner.name} · ` : ""}${owner.email}` : "kein Zugang"}
                             {others.length > 0 ? ` +${others.length}` : ""}
                             {" · "}
                             {itemsPerRestaurant.get(restaurant.id) ?? 0} Gerichte

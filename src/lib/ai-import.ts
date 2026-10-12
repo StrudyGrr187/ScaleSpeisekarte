@@ -1,9 +1,14 @@
 import "server-only";
 
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { Type } from "@google/genai";
 import { AppError } from "@/lib/action-result";
-import { AI_MODEL, getAiClient, toAiError } from "@/lib/ai";
+import {
+  GEMINI_MODEL,
+  generateWithRetry,
+  getGeminiClient,
+  toAiError,
+} from "@/lib/ai";
 import { EU_ALLERGENS } from "@/lib/constants";
 import { parsePrice } from "@/lib/money";
 
@@ -51,6 +56,60 @@ const ExtractionSchema = z.object({
     .describe("Kategorien in der Reihenfolge der Vorlage"),
 });
 
+const geminiExtractionSchema = {
+  type: Type.OBJECT,
+  properties: {
+    restaurantName: {
+      type: Type.STRING,
+      description: "Name des Restaurants, falls auf der Karte erkennbar, sonst null",
+      nullable: true,
+    },
+    categories: {
+      type: Type.ARRAY,
+      description: "Kategorien in der Reihenfolge der Vorlage",
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: {
+            type: Type.STRING,
+            description: "Name der Kategorie, z. B. Vorspeisen",
+          },
+          items: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: {
+                  type: Type.STRING,
+                  description: "Name des Gerichts, exakt wie gedruckt",
+                },
+                description: {
+                  type: Type.STRING,
+                  description: "Beschreibung/Zutaten, exakt wie gedruckt, sonst null",
+                  nullable: true,
+                },
+                priceText: {
+                  type: Type.STRING,
+                  description: "Preis exakt wie gedruckt, z. B. '12,50' oder '8.90 €'",
+                },
+                allergenCodes: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description:
+                    "NUR Allergen-Buchstaben, die auf der Karte tatsächlich beim Gericht stehen. Niemals raten.",
+                },
+              },
+              required: ["name", "priceText", "allergenCodes"],
+            },
+          },
+        },
+        required: ["name", "items"],
+      },
+    },
+  },
+  required: ["categories"],
+};
+
 export type ImportedItem = {
   name: string;
   description: string | null;
@@ -90,51 +149,43 @@ export async function extractMenuFromFile(file: File): Promise<ImportResult> {
   }
 
   const data = Buffer.from(await file.arrayBuffer()).toString("base64");
-
-  const source = isPdf
-    ? ({
-        type: "document" as const,
-        source: { type: "base64" as const, media_type: "application/pdf" as const, data },
-      })
-    : ({
-        type: "image" as const,
-        source: {
-          type: "base64" as const,
-          media_type: file.type as (typeof IMAGE_TYPES)[number],
-          data,
-        },
-      });
-
   const allergenHint = EU_ALLERGENS.map((a) => `${a.code} = ${a.name}`).join(", ");
 
   try {
-    const client = getAiClient();
-    const response = await client.messages.parse({
-      model: AI_MODEL,
-      max_tokens: 16000,
-      system: SYSTEM,
-      thinking: { type: "adaptive" },
-      messages: [
-        {
-          role: "user",
-          content: [
-            source,
-            {
-              type: "text",
-              text: `Lies diese Speisekarte vollständig aus.
+    const ai = getGeminiClient();
+    const response = await generateWithRetry(() =>
+      ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  mimeType: file.type,
+                  data,
+                },
+              },
+              {
+                text: `Lies diese Speisekarte vollständig aus.
 
 Übliche Allergen-Kennzeichnung in Deutschland/Österreich: ${allergenHint}.
-Übernimm solche Kennzeichen nur, wenn sie beim Gericht stehen.`,
-            },
-          ],
+Übernehme solche Kennzeichen nur, wenn sie beim Gericht stehen.`,
+              },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction: SYSTEM,
+          responseMimeType: "application/json",
+          responseSchema: geminiExtractionSchema,
         },
-      ],
-      output_config: { format: zodOutputFormat(ExtractionSchema) },
-    });
+      })
+    );
 
-    const parsed = response.parsed_output;
-    if (!parsed) throw new AppError("Die Karte konnte nicht ausgelesen werden.");
-
+    const text = response.text?.trim();
+    if (!text) throw new AppError("Die Karte konnte nicht ausgelesen werden.");
+    const parsed = ExtractionSchema.parse(JSON.parse(text));
     return normalise(parsed);
   } catch (error) {
     throw toAiError(error);

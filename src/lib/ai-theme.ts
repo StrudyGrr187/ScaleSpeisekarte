@@ -1,11 +1,17 @@
 import "server-only";
 
 import { z } from "zod";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import { Type } from "@google/genai";
 import { AppError } from "@/lib/action-result";
-import { AI_MODEL, getAiClient, toAiError } from "@/lib/ai";
+import {
+  GEMINI_MODEL,
+  generateWithRetry,
+  getGeminiClient,
+  toAiError,
+} from "@/lib/ai";
 import { contrastRatio, deriveAccentTokens, normalizeHex } from "@/lib/color";
 import { DEFAULT_THEME, MENU_THEMES, THEME_KEYS, type ThemeKey } from "@/lib/themes";
+import { DEFAULT_CUSTOM_THEME, type CustomTheme } from "@/lib/themes";
 import { DEFAULT_FONT_PAIR, FONT_PAIRS, type FontPairKey } from "@/lib/fonts";
 
 /**
@@ -28,6 +34,19 @@ const SuggestionSchema = z.object({
   rationale: z
     .string()
     .describe("Ein bis zwei Sätze auf Deutsch, warum das zum Restaurant passt. Kein Marketing."),
+  customTheme: z.object({
+    name: z.string().min(1).max(60),
+    mood: z.string().min(1).max(120),
+    background: z.string(),
+    surface: z.string(),
+    surfaceAlt: z.string(),
+    ink: z.string(),
+    muted: z.string(),
+    border: z.string(),
+    borderStrong: z.string(),
+    radius: z.number().int().min(0).max(28),
+    density: z.enum(["tight", "normal", "airy"]),
+  }),
 });
 
 export type ThemeSuggestion = {
@@ -37,6 +56,7 @@ export type ThemeSuggestion = {
   rationale: string;
   /** True when the model's colour was replaced because it was unusable. */
   colorAdjusted: boolean;
+  customTheme: CustomTheme;
 };
 
 const SYSTEM = `Du bist Art Director für Restaurant-Speisekarten und schlägst einen Look vor.
@@ -53,7 +73,50 @@ ${MENU_THEMES.map((t) => `- ${t.key}: ${t.mood}${t.archetype === "print" ? " (oh
 
 Themes mit Bildern lohnen sich nur, wenn Fotos die Speisen verkaufen (Streetfood, Burger, Brunch, Kuchen). Trägt die Typografie mehr als das Bild, nimm eine der Druck-Darstellungen.
 
+Erzeuge zusätzlich immer einen eigenen Theme-Entwurf. Die Farben müssen zueinander passen und ausreichend Kontrast haben: dunkle Tinte auf hellem Hintergrund, keine Neonfarben. Nutze radius zwischen 0 und 28 und eine Dichte aus tight, normal oder airy.
+
 Halte die Begründung sachlich und kurz.`;
+
+const geminiSuggestionSchema = {
+  type: Type.OBJECT,
+  properties: {
+    accentColor: {
+      type: Type.STRING,
+      description: "Akzentfarbe als Hex, z. B. #7A3B2E. Genau ein Farbwert.",
+    },
+    fontPair: {
+      type: Type.STRING,
+      description: "Schlüssel der Schriftpaarung",
+    },
+    menuTheme: {
+      type: Type.STRING,
+      description: "Schlüssel der Darstellung",
+    },
+    rationale: {
+      type: Type.STRING,
+      description: "Ein bis zwei Sätze auf Deutsch, warum das zum Restaurant passt. Kein Marketing.",
+    },
+    customTheme: {
+      type: Type.OBJECT,
+      description: "Ein eigener, in sich stimmiger Theme-Entwurf für die Gästekarte.",
+      properties: {
+        name: { type: Type.STRING, description: "Kurzer Name des individuellen Looks" },
+        mood: { type: Type.STRING, description: "Kurze Stilbeschreibung" },
+        background: { type: Type.STRING, description: "Hintergrundfarbe als Hex" },
+        surface: { type: Type.STRING, description: "Flächenfarbe als Hex" },
+        surfaceAlt: { type: Type.STRING, description: "Alternative Flächenfarbe als Hex" },
+        ink: { type: Type.STRING, description: "Haupttextfarbe als Hex" },
+        muted: { type: Type.STRING, description: "Sekundärtextfarbe als Hex" },
+        border: { type: Type.STRING, description: "Feine Rahmenfarbe als Hex" },
+        borderStrong: { type: Type.STRING, description: "Starke Rahmenfarbe als Hex" },
+        radius: { type: Type.NUMBER, description: "Eckenradius zwischen 0 und 28 Pixel" },
+        density: { type: Type.STRING, description: "Abstandsdichte: tight, normal oder airy" },
+      },
+      required: ["name", "mood", "background", "surface", "surfaceAlt", "ink", "muted", "border", "borderStrong", "radius", "density"],
+    },
+  },
+  required: ["accentColor", "fontPair", "menuTheme", "rationale", "customTheme"],
+};
 
 export async function suggestTheme(
   prompt: string,
@@ -70,30 +133,37 @@ export async function suggestTheme(
   const options = FONT_PAIRS.map((p) => `- ${p.key}: ${p.label} — ${p.mood}`).join("\n");
 
   try {
-    const client = getAiClient();
-    const response = await client.messages.parse({
-      model: AI_MODEL,
-      max_tokens: 4000,
-      system: SYSTEM,
-      thinking: { type: "adaptive" },
-      messages: [
-        {
-          role: "user",
-          content: `Restaurant: ${restaurantName}
+    const ai = getGeminiClient();
+    const response = await generateWithRetry(() =>
+      ai.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Restaurant: ${restaurantName}
 Beschreibung des Wirts: ${description}
 
 Verfügbare Schriftpaarungen:
 ${options}
 
 Schlage einen passenden Look vor.`,
+              },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction: SYSTEM,
+          responseMimeType: "application/json",
+          responseSchema: geminiSuggestionSchema,
         },
-      ],
-      output_config: { format: zodOutputFormat(SuggestionSchema) },
-    });
+      })
+    );
 
-    const parsed = response.parsed_output;
-    if (!parsed) throw new AppError("Es kam kein verwertbarer Vorschlag zurück.");
-
+    const text = response.text?.trim();
+    if (!text) throw new AppError("Es kam kein verwertbarer Vorschlag zurück.");
+    const parsed = SuggestionSchema.parse(JSON.parse(text));
     return validate(parsed);
   } catch (error) {
     throw toAiError(error);
@@ -126,5 +196,23 @@ function validate(parsed: z.infer<typeof SuggestionSchema>): ThemeSuggestion {
     menuTheme: THEME_KEYS.includes(parsed.menuTheme) ? parsed.menuTheme : DEFAULT_THEME,
     rationale: parsed.rationale.trim().slice(0, 400),
     colorAdjusted: unusable,
+    customTheme: normaliseCustomTheme(parsed.customTheme),
+  };
+}
+
+function normaliseCustomTheme(theme: z.infer<typeof SuggestionSchema>["customTheme"]): CustomTheme {
+  const color = (value: string, fallback: string) => normalizeHex(value) ?? fallback;
+  return {
+    name: theme.name.trim().slice(0, 60) || DEFAULT_CUSTOM_THEME.name,
+    mood: theme.mood.trim().slice(0, 120) || DEFAULT_CUSTOM_THEME.mood,
+    background: color(theme.background, DEFAULT_CUSTOM_THEME.background),
+    surface: color(theme.surface, DEFAULT_CUSTOM_THEME.surface),
+    surfaceAlt: color(theme.surfaceAlt, DEFAULT_CUSTOM_THEME.surfaceAlt),
+    ink: color(theme.ink, DEFAULT_CUSTOM_THEME.ink),
+    muted: color(theme.muted, DEFAULT_CUSTOM_THEME.muted),
+    border: color(theme.border, DEFAULT_CUSTOM_THEME.border),
+    borderStrong: color(theme.borderStrong, DEFAULT_CUSTOM_THEME.borderStrong),
+    radius: Math.max(0, Math.min(28, Math.round(theme.radius))),
+    density: theme.density,
   };
 }

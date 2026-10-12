@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { isSuspended } from "@/lib/suspension";
-import type { ThemeKey } from "@/lib/themes";
+import { resolveFontSize, type CustomTheme, type ThemeKey } from "@/lib/themes";
 
 /**
  * The single view model behind both the public menu and the admin phone
@@ -41,11 +41,14 @@ export type PublicRestaurant = {
   address: string | null;
   phone: string | null;
   website: string | null;
+  googleReviewUrl: string | null;
   primaryColor: string;
   currency: string;
   locale: string;
   menuTheme: ThemeKey;
   fontPair: string;
+  fontSize: "small" | "normal" | "large";
+  customTheme: CustomTheme | null;
   openingHours: {
     dayOfWeek: number;
     closed: boolean;
@@ -71,11 +74,14 @@ const restaurantSelect = {
   address: true,
   phone: true,
   website: true,
+  googleReviewUrl: true,
   primaryColor: true,
   currency: true,
   locale: true,
   menuTheme: true,
   fontPair: true,
+  fontSize: true,
+  customTheme: true,
   openingHours: {
     orderBy: { dayOfWeek: "asc" },
     select: { dayOfWeek: true, closed: true, opensAt: true, closesAt: true },
@@ -192,7 +198,16 @@ export async function getPublicMenuBySlug(slug: string): Promise<PublicMenuResul
   if (!menu || !menu.published) {
     return {
       status: "ok",
-      menu: { restaurant, categories: [], published: false, allergenLegend: [] },
+      menu: {
+        restaurant: {
+          ...restaurant,
+          fontSize: resolveFontSize(restaurant.fontSize),
+          customTheme: restaurant.customTheme as CustomTheme | null,
+        },
+        categories: [],
+        published: false,
+        allergenLegend: [],
+      },
     };
   }
 
@@ -201,7 +216,11 @@ export async function getPublicMenuBySlug(slug: string): Promise<PublicMenuResul
   return {
     status: "ok",
     menu: {
-      restaurant,
+      restaurant: {
+        ...restaurant,
+        fontSize: resolveFontSize(restaurant.fontSize),
+        customTheme: restaurant.customTheme as CustomTheme | null,
+      },
       categories,
       published: true,
       allergenLegend: await allergenLegendFor(categories),

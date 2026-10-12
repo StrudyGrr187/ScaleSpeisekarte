@@ -20,6 +20,7 @@ import { useToast } from "@/components/ui/toast";
 import type { ImportResult } from "@/lib/ai-import";
 import { parsePrice } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { BulkImport } from "./bulk-import";
 
 type Draft = {
   name: string;
@@ -33,7 +34,7 @@ type Draft = {
   }[];
 };
 
-export function ImportWizard() {
+export function ImportWizard({ aiReady = true }: { aiReady?: boolean }) {
   const router = useRouter();
   const toast = useToast();
 
@@ -102,11 +103,16 @@ export function ImportWizard() {
 
   if (!draft) {
     return (
-      <div className="max-w-[720px]">
+      <div className="max-w-[860px]">
         <FormError>{error}</FormError>
 
         <Card>
           <CardBody>
+            {!aiReady ? (
+              <div className="mb-4 rounded-admin border border-admin-warning/30 bg-admin-warning-soft px-4 py-3 text-admin-sm text-admin-ink">
+                Der Foto-/PDF-Import ist derzeit nicht verfügbar, weil kein KI-Zugang eingerichtet ist. Der Excel-/CSV-Import darunter funktioniert trotzdem.
+              </div>
+            ) : null}
             <input
               ref={inputRef}
               type="file"
@@ -123,7 +129,7 @@ export function ImportWizard() {
 
             <button
               type="button"
-              disabled={analyzing}
+              disabled={analyzing || !aiReady}
               onClick={() => inputRef.current?.click()}
               className={cn(
                 "flex w-full flex-col items-center justify-center gap-3 rounded-admin-lg border-2 border-dashed px-6 py-12 text-center",
@@ -158,7 +164,7 @@ export function ImportWizard() {
                     <Upload size={20} strokeWidth={1.75} />
                   </span>
                   <span className="text-admin-base font-semibold text-admin-ink">
-                    PDF oder Foto auswählen
+                    {aiReady ? "PDF oder Foto auswählen" : "KI-Import nicht eingerichtet"}
                   </span>
                   <span className="max-w-[46ch] text-admin-sm text-admin-muted">
                     Original-PDF oder ein scharfes, gerades Foto. Bis 12 MB.
@@ -179,6 +185,7 @@ export function ImportWizard() {
             </ul>
           </CardBody>
         </Card>
+        <BulkImport />
       </div>
     );
   }
