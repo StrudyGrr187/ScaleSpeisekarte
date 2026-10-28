@@ -13,6 +13,7 @@ import {
 import { categorySchema, menuItemSchema } from "@/lib/validation";
 import { parsePrice } from "@/lib/money";
 import { deleteImage } from "@/lib/storage";
+import { scheduleTranslation } from "@/lib/translation";
 
 function revalidateAdmin() {
   revalidatePath("/admin", "layout");
@@ -59,6 +60,7 @@ export async function createCategoryAction(
     });
 
     revalidateAdmin();
+    scheduleTranslation(restaurant.id);
     return ok(category, "Kategorie angelegt.");
   });
 }
@@ -83,6 +85,7 @@ export async function updateCategoryAction(
 
     await prisma.category.update({ where: { id: categoryId }, data: parsed.data });
     revalidateAdmin();
+    scheduleTranslation(restaurant.id);
     return ok(undefined, "Kategorie gespeichert.");
   });
 }
@@ -102,6 +105,7 @@ export async function renameCategoryAction(
 
     await prisma.category.update({ where: { id: categoryId }, data: { name: trimmed } });
     revalidateAdmin();
+    scheduleTranslation(restaurant.id);
     return ok();
   });
 }
@@ -246,6 +250,7 @@ export async function createItemAction(
     });
 
     revalidateAdmin();
+    scheduleTranslation(restaurant.id);
     return ok(item, "Gericht angelegt.");
   });
 }
@@ -309,6 +314,7 @@ export async function updateItemAction(
     ]);
 
     revalidateAdmin();
+    scheduleTranslation(restaurant.id);
     return ok(undefined, "Gericht gespeichert.");
   });
 }
@@ -329,6 +335,7 @@ export async function updateItemFieldAction(
       if (trimmed.length > 120) return fail("Maximal 120 Zeichen.");
       await prisma.menuItem.update({ where: { id: itemId }, data: { name: trimmed, isExample: false } });
       revalidateAdmin();
+      scheduleTranslation(restaurant.id);
       return ok(undefined);
     }
 
@@ -395,6 +402,7 @@ export async function duplicateItemAction(itemId: string): Promise<ActionResult<
     });
 
     revalidateAdmin();
+    scheduleTranslation(restaurant.id);
     return ok(copy, "Kopie angelegt — sie ist noch ausgeblendet.");
   });
 }

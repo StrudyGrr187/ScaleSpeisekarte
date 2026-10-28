@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Star } from "lucide-react";
+import type { GuestStrings } from "@/lib/guest-i18n";
 import type { PublicMenuItem } from "@/lib/menu-query";
 import { DietaryIcon } from "@/components/menu/dietary-icon";
 import { formatPrice, formatPriceDecimal } from "@/lib/money";
@@ -25,6 +26,7 @@ export function MenuItemRow({
   archetype,
   onAllergenClick,
   priority,
+  strings,
 }: {
   item: PublicMenuItem;
   currency: string;
@@ -32,13 +34,23 @@ export function MenuItemRow({
   archetype: Archetype;
   onAllergenClick: () => void;
   priority?: boolean;
+  strings: GuestStrings;
 }) {
   const soldOut = !item.available;
   const discounted = item.oldPrice !== null && item.oldPrice > item.price;
 
   return archetype === "print"
-    ? renderClassic({ item, locale, currency, soldOut, discounted })
-    : renderModern({ item, currency, locale, soldOut, discounted, onAllergenClick, priority });
+    ? renderClassic({ item, locale, currency, soldOut, discounted, t: strings })
+    : renderModern({
+        item,
+        currency,
+        locale,
+        soldOut,
+        discounted,
+        onAllergenClick,
+        priority,
+        t: strings,
+      });
 }
 
 /* ------------------------------------------------------------------ *
@@ -51,12 +63,14 @@ function renderClassic({
   currency,
   soldOut,
   discounted,
+  t,
 }: {
   item: PublicMenuItem;
   locale: string;
   currency: string;
   soldOut: boolean;
   discounted: boolean;
+  t: GuestStrings;
 }) {
   const allergenLabel = item.allergenCodes.join(", ");
 
@@ -84,7 +98,7 @@ function renderClassic({
               >
                 <Star size={11} className="fill-current" />
               </span>
-              <span className="sr-only">Empfehlung des Hauses: </span>
+              <span className="sr-only">{t.featuredLong}: </span>
             </>
           ) : null}
           {item.name}
@@ -93,7 +107,7 @@ function renderClassic({
               <span className="allergen-sup" aria-hidden>
                 {item.allergenCodes.join(",")}
               </span>
-              <span className="sr-only"> — Allergene: {allergenLabel}</span>
+              <span className="sr-only"> — {t.allergens}: {allergenLabel}</span>
             </>
           ) : null}
         </h3>
@@ -107,7 +121,7 @@ function renderClassic({
             <>
               {discounted ? (
                 <span className="mr-2 text-[0.8em] text-guest-muted line-through">
-                  <span className="sr-only">Vorher </span>
+                  <span className="sr-only">{t.previously} </span>
                   {formatPriceDecimal(item.oldPrice!, locale)}
                 </span>
               ) : null}
@@ -136,7 +150,7 @@ function renderClassic({
           data-chrome
           className="mt-1.5 text-meta font-semibold tracking-[0.08em] text-guest-muted uppercase"
         >
-          Heute nicht verfügbar
+          {t.soldOut}
         </p>
       ) : item.dietaryTags.length > 0 ? (
         <ul
@@ -172,6 +186,7 @@ function renderModern({
   discounted,
   onAllergenClick,
   priority,
+  t,
 }: {
   item: PublicMenuItem;
   currency: string;
@@ -180,6 +195,7 @@ function renderModern({
   discounted: boolean;
   onAllergenClick: () => void;
   priority?: boolean;
+  t: GuestStrings;
 }) {
   return (
     <article
@@ -197,7 +213,7 @@ function renderModern({
           {item.featured && !soldOut ? (
             <span className="inline-flex h-[20px] shrink-0 items-center gap-1 rounded-full bg-brand-soft px-[7px] text-[11px] font-bold tracking-[0.06em] text-brand-text uppercase">
               <Star size={11} className="fill-current" aria-hidden />
-              Empfehlung
+              {t.featured}
             </span>
           ) : null}
         </h3>
@@ -206,7 +222,7 @@ function renderModern({
           <button
             type="button"
             onClick={onAllergenClick}
-            aria-label={`Allergene: ${item.allergenCodes.join(", ")}. Legende öffnen`}
+            aria-label={`${t.allergens}: ${item.allergenCodes.join(", ")}. ${t.openLegend}`}
             className="-my-3 inline-flex min-h-11 min-w-11 items-center py-3 font-mono text-[12px] tracking-[0.14em] text-guest-muted underline decoration-guest-border-strong decoration-from-font underline-offset-4"
           >
             {item.allergenCodes.join(" ")}
@@ -234,7 +250,7 @@ function renderModern({
         {soldOut ? (
           <p className="mt-2">
             <span className="inline-flex h-[22px] items-center rounded-full border border-guest-border bg-guest-surface-2 px-2 text-[12px] font-semibold tracking-[0.06em] text-guest-muted uppercase">
-              Heute nicht verfügbar
+              {t.soldOut}
             </span>
           </p>
         ) : (
@@ -249,7 +265,7 @@ function renderModern({
             </span>
             {discounted ? (
               <span className="text-body text-guest-muted line-through decoration-1">
-                <span className="sr-only">Vorher </span>
+                <span className="sr-only">{t.previously} </span>
                 {formatPrice(item.oldPrice!, currency, locale)}
               </span>
             ) : null}

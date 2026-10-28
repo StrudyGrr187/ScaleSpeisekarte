@@ -1,4 +1,6 @@
 import type { PublicMenu, PublicRestaurant } from "@/lib/menu-query";
+import { guestStrings } from "@/lib/guest-i18n";
+import { SOURCE_LANGUAGE } from "@/lib/languages";
 
 /**
  * The builder's client-side state. It is a superset of the public shape: it
@@ -80,5 +82,9 @@ export function builderToPublic(data: BuilderData): PublicMenu {
     categories,
     published: data.published,
     allergenLegend: data.allergens.filter((a) => usedCodes.has(a.code)),
+    // The preview shows what the owner types, which is German.
+    language: SOURCE_LANGUAGE,
+    languages: [SOURCE_LANGUAGE],
+    strings: guestStrings(SOURCE_LANGUAGE),
   };
 }

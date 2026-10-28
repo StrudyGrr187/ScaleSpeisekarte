@@ -1,7 +1,7 @@
 import { Globe, MapPin, Phone, Star } from "lucide-react";
 import type { PublicRestaurant } from "@/lib/menu-query";
+import type { GuestStrings } from "@/lib/guest-i18n";
 import type { Archetype } from "@/lib/themes";
-import { WEEKDAYS_SHORT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /** Practical detail a guest actually looks for, kept below the menu itself. */
@@ -11,12 +11,17 @@ export function MenuFooter({
   onOpenLegend,
   hasAllergens,
   hasFeatured,
+  strings: t,
+  translated,
 }: {
   restaurant: PublicRestaurant;
   archetype: Archetype;
   onOpenLegend: () => void;
   hasAllergens: boolean;
   hasFeatured: boolean;
+  strings: GuestStrings;
+  /** True when dishes are shown in a machine translation rather than the owner's German. */
+  translated: boolean;
 }) {
   const hours = restaurant.openingHours;
   const classic = archetype === "print";
@@ -26,7 +31,7 @@ export function MenuFooter({
       {classic && hasFeatured ? (
         <p className="mb-6 flex items-center justify-center gap-1.5 text-body text-guest-ink-2">
           <Star size={11} className="fill-current text-brand-text" aria-hidden />
-          Empfehlung des Hauses
+          {t.featuredLong}
         </p>
       ) : null}
 
@@ -36,7 +41,7 @@ export function MenuFooter({
           onClick={onOpenLegend}
           className="mb-7 flex h-11 w-full items-center justify-center rounded-full border border-guest-border bg-guest-surface px-4 text-[14px] font-semibold text-guest-ink-2 active:bg-guest-surface-2"
         >
-          Allergene &amp; Zusatzstoffe
+          {t.allergensAndAdditives}
         </button>
       ) : null}
 
@@ -49,15 +54,15 @@ export function MenuFooter({
               classic && "text-center"
             )}
           >
-            Öffnungszeiten
+            {t.openingHours}
           </h2>
           <dl className="mt-3 space-y-1.5">
             {hours.map((day) => (
               <div key={day.dayOfWeek} className="flex justify-between gap-4 text-body">
-                <dt className="text-guest-ink-2">{WEEKDAYS_SHORT[day.dayOfWeek]}</dt>
+                <dt className="text-guest-ink-2">{t.weekdaysShort[day.dayOfWeek]}</dt>
                 <dd className="tabular-nums text-guest-muted">
                   {day.closed || !day.opensAt || !day.closesAt
-                    ? "Geschlossen"
+                    ? t.closed
                     : `${day.opensAt} – ${day.closesAt}`}
                 </dd>
               </div>
@@ -107,15 +112,25 @@ export function MenuFooter({
           )}
         >
           <Star size={16} className="fill-current text-brand-text" aria-hidden />
-          Uns auf Google bewerten
+          {t.review}
         </a>
+      ) : null}
+
+      {translated ? (
+        <p className={cn("mt-8 text-[13px] leading-relaxed text-guest-muted", classic && "text-center")}>
+          {t.machineTranslated}
+        </p>
       ) : null}
 
       <p
         data-chrome
-        className={cn("mt-8 text-[13px] text-guest-muted", classic && "text-center")}
+        className={cn(
+          "text-[13px] text-guest-muted",
+          translated ? "mt-3" : "mt-8",
+          classic && "text-center"
+        )}
       >
-        Alle Preise in {restaurant.currency}, inkl. MwSt.
+        {t.pricesNote.replace("{currency}", restaurant.currency)}
       </p>
     </footer>
   );

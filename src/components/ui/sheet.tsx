@@ -13,11 +13,14 @@ export function Sheet({
   open,
   onClose,
   title,
+  closeLabel = "Schließen",
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  /** The guest menu passes this in the guest's language. */
+  closeLabel?: string;
   children: React.ReactNode;
 }) {
   const panelRef = useDismissable<HTMLDivElement>(open, onClose);
@@ -65,7 +68,7 @@ export function Sheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Schließen"
+            aria-label={closeLabel}
             className="-mr-2 flex size-11 items-center justify-center rounded-full text-guest-muted active:bg-guest-surface-2"
           >
             <X size={20} strokeWidth={1.75} aria-hidden />

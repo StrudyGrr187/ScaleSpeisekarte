@@ -79,6 +79,13 @@ model Restaurant {
   fontSize  String    @default("normal")
   customTheme Json?
 
+  /// Languages guests can switch to, besides German (the source the owner
+  /// writes in). Codes from src/lib/languages.ts; unknown codes are ignored.
+  languages    String[] @default([])
+  /// Machine translations of `description`, keyed by language. Shape and
+  /// staleness rules: src/lib/translation.ts.
+  translations Json?
+
   // Onboarding state — drives the post-signup wizard.
   onboardedAt DateTime?
 
@@ -146,6 +153,8 @@ model Category {
   icon        String? // lucide icon key, e.g. "utensils" — resolved to an SVG, never an emoji
   sortOrder   Int     @default(0)
   active      Boolean @default(true)
+  /// Machine translations of name and description, keyed by language.
+  translations Json?
 
   items MenuItem[]
 
@@ -178,6 +187,9 @@ model MenuItem {
 
   // Marks seeded example data so the builder can flag it before publishing.
   isExample Boolean @default(false)
+
+  /// Machine translations of name and description, keyed by language.
+  translations Json?
 
   allergens   MenuItemAllergen[]
   dietaryTags MenuItemDietaryTag[]

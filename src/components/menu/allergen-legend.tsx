@@ -1,22 +1,22 @@
 "use client";
 
+import type { GuestStrings } from "@/lib/guest-i18n";
 import { Sheet } from "@/components/ui/sheet";
 
 export function AllergenLegend({
   open,
   onClose,
   allergens,
+  strings: t,
 }: {
   open: boolean;
   onClose: () => void;
   allergens: { code: string; name: string }[];
+  strings: GuestStrings;
 }) {
   return (
-    <Sheet open={open} onClose={onClose} title="Allergene">
-      <p className="mb-4 text-body text-guest-muted">
-        Die Buchstaben hinter einem Gericht verweisen auf enthaltene Allergene nach
-        EU-Lebensmittelinformationsverordnung.
-      </p>
+    <Sheet open={open} onClose={onClose} title={t.allergens} closeLabel={t.close}>
+      <p className="mb-4 text-body text-guest-muted">{t.legendIntro}</p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3">
         {allergens.map((allergen) => (
           <div key={allergen.code} className="contents">
@@ -28,7 +28,7 @@ export function AllergenLegend({
         ))}
       </dl>
       <p className="mt-5 border-t border-guest-border pt-4 text-[13px] leading-relaxed text-guest-muted">
-        Bei Fragen zu Zutaten und Unverträglichkeiten sprechen Sie bitte unser Personal an.
+        {t.legendNote}
       </p>
     </Sheet>
   );

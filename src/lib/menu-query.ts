@@ -1,7 +1,15 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
+import { allergenName, dietaryName, guestStrings, type GuestStrings } from "@/lib/guest-i18n";
+import {
+  normalizeLanguages,
+  resolveGuestLanguage,
+  SOURCE_LANGUAGE,
+  type LanguageCode,
+} from "@/lib/languages";
 import { isSuspended } from "@/lib/suspension";
+import { localize } from "@/lib/translation";
 import { resolveFontSize, type CustomTheme, type ThemeKey } from "@/lib/themes";
 
 /**
@@ -62,6 +70,11 @@ export type PublicMenu = {
   categories: PublicMenuCategory[];
   published: boolean;
   allergenLegend: { code: string; name: string }[];
+  /** The language everything above is already rendered in. */
+  language: LanguageCode;
+  /** What the guest can switch between, German first. One entry: no switcher. */
+  languages: LanguageCode[];
+  strings: GuestStrings;
 };
 
 const restaurantSelect = {
@@ -99,6 +112,7 @@ function categoriesQuery(menuId: string) {
       description: true,
       image: true,
       icon: true,
+      translations: true,
       items: {
         where: { visible: true },
         orderBy: { sortOrder: "asc" },
@@ -111,6 +125,7 @@ function categoriesQuery(menuId: string) {
           image: true,
           available: true,
           featured: true,
+          translations: true,
           allergens: { select: { allergen: { select: { code: true, sortOrder: true } } } },
           dietaryTags: {
             select: {
@@ -125,17 +140,19 @@ function categoriesQuery(menuId: string) {
 
 type RawCategories = Awaited<ReturnType<typeof categoriesQuery>>;
 
-function toCategories(rows: RawCategories): PublicMenuCategory[] {
+/**
+ * Builds the guest shape in one language. The raw `translations` JSON holds
+ * every language and is dropped here — a guest page carries only its own.
+ */
+function toCategories(rows: RawCategories, lang: LanguageCode): PublicMenuCategory[] {
   return rows.map((category) => ({
     id: category.id,
-    name: category.name,
-    description: category.description,
+    ...localize(category, lang),
     image: category.image,
     icon: category.icon,
     items: category.items.map((item) => ({
       id: item.id,
-      name: item.name,
-      description: item.description,
+      ...localize(item, lang),
       price: item.price,
       oldPrice: item.oldPrice,
       image: item.image,
@@ -148,13 +165,18 @@ function toCategories(rows: RawCategories): PublicMenuCategory[] {
       dietaryTags: item.dietaryTags
         .map((link) => link.dietaryTag)
         .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map(({ key, name, icon, color }) => ({ key, name, icon, color })),
+        .map(({ key, name, icon, color }) => ({
+          key,
+          name: dietaryName(key, lang, name),
+          icon,
+          color,
+        })),
     })),
   }));
 }
 
 /** Only the allergens actually used on this menu — no wall of irrelevant codes. */
-async function allergenLegendFor(categories: PublicMenuCategory[]) {
+async function allergenLegendFor(categories: PublicMenuCategory[], lang: LanguageCode) {
   const used = new Set(categories.flatMap((c) => c.items.flatMap((i) => i.allergenCodes)));
   if (used.size === 0) return [];
   const rows = await prisma.allergen.findMany({
@@ -162,7 +184,7 @@ async function allergenLegendFor(categories: PublicMenuCategory[]) {
     orderBy: { sortOrder: "asc" },
     select: { code: true, name: true },
   });
-  return rows;
+  return rows.map((row) => ({ code: row.code, name: allergenName(row.code, lang, row.name) }));
 }
 
 export type PublicMenuResult =
@@ -171,21 +193,44 @@ export type PublicMenuResult =
   | { status: "suspended"; restaurantName: string }
   | { status: "not-found" };
 
-/** Public menu by slug. */
-export async function getPublicMenuBySlug(slug: string): Promise<PublicMenuResult> {
+/** How the guest asked for a language: `?lang=` and the browser's Accept-Language. */
+export type LanguageRequest = { lang?: string; acceptLanguage: string | null };
+
+/** Public menu by slug, in the language the guest asked for if the restaurant offers it. */
+export async function getPublicMenuBySlug(
+  slug: string,
+  request: LanguageRequest = { acceptLanguage: null }
+): Promise<PublicMenuResult> {
   const row = await prisma.restaurant.findUnique({
     where: { slug },
     // The suspension fields are read to decide, then stripped below — this
     // object is handed to a client component, and the operator's note must
     // never be serialised into a guest's page. It is deliberately not selected.
-    select: { ...restaurantSelect, suspendedAt: true, suspendedUntil: true },
+    // The same goes for the raw translations: they are applied, then dropped.
+    select: {
+      ...restaurantSelect,
+      suspendedAt: true,
+      suspendedUntil: true,
+      languages: true,
+      translations: true,
+    },
   });
   if (!row) return { status: "not-found" };
 
-  const { suspendedAt, suspendedUntil, ...restaurant } = row;
+  const { suspendedAt, suspendedUntil, languages: enabled, translations, ...stored } = row;
   if (isSuspended({ suspendedAt, suspendedUntil })) {
-    return { status: "suspended", restaurantName: restaurant.name };
+    return { status: "suspended", restaurantName: stored.name };
   }
+
+  const languages: LanguageCode[] = [SOURCE_LANGUAGE, ...normalizeLanguages(enabled)];
+  const language = resolveGuestLanguage(request.lang, request.acceptLanguage, languages);
+  const restaurant = {
+    ...stored,
+    description: stored.description
+      ? localize({ name: "", description: stored.description, translations }, language).description
+      : null,
+  };
+  const i18n = { language, languages, strings: guestStrings(language) };
 
   const menu = await prisma.menu.findFirst({
     where: { restaurantId: restaurant.id },
@@ -207,11 +252,12 @@ export async function getPublicMenuBySlug(slug: string): Promise<PublicMenuResul
         categories: [],
         published: false,
         allergenLegend: [],
+        ...i18n,
       },
     };
   }
 
-  const categories = toCategories(await categoriesQuery(menu.id));
+  const categories = toCategories(await categoriesQuery(menu.id), language);
 
   return {
     status: "ok",
@@ -223,7 +269,8 @@ export async function getPublicMenuBySlug(slug: string): Promise<PublicMenuResul
       },
       categories,
       published: true,
-      allergenLegend: await allergenLegendFor(categories),
+      allergenLegend: await allergenLegendFor(categories, language),
+      ...i18n,
     },
   };
 }

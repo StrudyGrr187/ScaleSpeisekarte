@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import {
+  Languages,
   LayoutDashboard,
   Palette,
   Sparkles,
@@ -35,6 +36,7 @@ const NAV: NavItem[] = [
   { href: "/admin/builder", label: "Speisekarte", icon: UtensilsCrossed },
   { href: "/admin/import", label: "Karte importieren", icon: Sparkles, needsAi: true, adminOnly: true },
   { href: "/admin/design", label: "Design", icon: Palette },
+  { href: "/admin/languages", label: "Sprachen", icon: Languages, adminOnly: true },
   { href: "/admin/restaurant", label: "Restaurant", icon: Store },
   { href: "/admin/qr", label: "QR & NFC", icon: QrCode },
   { href: "/admin/settings", label: "Einstellungen", icon: Settings },

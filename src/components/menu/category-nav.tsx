@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Info } from "lucide-react";
+import type { GuestStrings } from "@/lib/guest-i18n";
 import type { Archetype } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ export function CategoryNav({
   archetype,
   onOpenLegend,
   hasAllergens,
+  strings: t,
 }: {
   categories: { id: string; name: string }[];
   activeId: string | null;
@@ -30,6 +32,7 @@ export function CategoryNav({
   archetype: Archetype;
   onOpenLegend: () => void;
   hasAllergens: boolean;
+  strings: GuestStrings;
 }) {
   const listRef = React.useRef<HTMLDivElement>(null);
   const chipRefs = React.useRef(new Map<string, HTMLButtonElement>());
@@ -59,7 +62,7 @@ export function CategoryNav({
 
   return (
     <nav
-      aria-label="Kategorien"
+      aria-label={t.categories}
       className={cn(
         "sticky top-0 z-40 flex h-nav items-stretch",
         classic
@@ -127,7 +130,7 @@ export function CategoryNav({
           type="button"
           data-chrome
           onClick={onOpenLegend}
-          aria-label="Allergene und Zusatzstoffe"
+          aria-label={t.allergensAndAdditives}
           className="sticky right-0 flex size-11 shrink-0 items-center justify-center self-center border-l border-guest-border bg-guest-bg text-guest-ink-2"
         >
           <Info size={16} strokeWidth={1.75} aria-hidden />

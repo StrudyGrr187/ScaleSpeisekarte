@@ -6,12 +6,14 @@ import type { PublicMenu } from "@/lib/menu-query";
 import { AllergenLegend } from "@/components/menu/allergen-legend";
 import { CategoryIcon } from "@/components/menu/category-icon";
 import { CategoryNav } from "@/components/menu/category-nav";
+import { LanguageSwitcher } from "@/components/menu/language-switcher";
 import { MenuFooter } from "@/components/menu/menu-footer";
 import { MenuHeader } from "@/components/menu/menu-header";
 import { MenuItemRow } from "@/components/menu/menu-item-row";
 import { useScrollSpy } from "@/components/menu/use-scroll-spy";
 import { accentStyle } from "@/lib/color";
 import { fontStyle } from "@/lib/fonts";
+import { languageInfo, SOURCE_LANGUAGE } from "@/lib/languages";
 import { customThemeStyle, resolveTheme, themeAttribute } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +22,7 @@ import { cn } from "@/lib/utils";
  * admin phone preview — `embedded` only switches which element scrolls.
  */
 export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedded?: boolean }) {
-  const { restaurant, categories, allergenLegend } = menu;
+  const { restaurant, categories, allergenLegend, language, languages, strings: t } = menu;
 
   const [legendOpen, setLegendOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
@@ -66,10 +68,27 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
   // One lookup, one branch: components render by archetype, never by theme name.
   const archetype = resolveTheme(restaurant.menuTheme).archetype;
   const classic = archetype === "print";
+  const showSwitcher = !embedded && languages.length > 1;
 
   const content = (
     <>
-      <MenuHeader restaurant={restaurant} archetype={archetype} />
+      {/* Without a cover, the print title starts near the top edge, where a
+          long centred name would run under the button — so it moves down. */}
+      <div className={cn("relative", showSwitcher && classic && !restaurant.coverImage && "pt-12")}>
+        <MenuHeader restaurant={restaurant} archetype={archetype} />
+        {/* The phone preview shows the German the owner is typing; a switcher
+            there would navigate the admin page away. */}
+        {showSwitcher ? (
+          <LanguageSwitcher
+            slug={restaurant.slug}
+            language={language}
+            languages={languages}
+            strings={t}
+            archetype={archetype}
+            className="absolute top-3 right-3 z-10"
+          />
+        ) : null}
+      </div>
       <div ref={sentinelRef} aria-hidden className={classic ? "h-4" : "h-9"} />
 
       <CategoryNav
@@ -80,6 +99,7 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
         archetype={archetype}
         onOpenLegend={openLegend}
         hasAllergens={hasAllergens}
+        strings={t}
       />
 
       <main className="px-gutter">
@@ -91,10 +111,8 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
             >
               <UtensilsCrossed size={22} strokeWidth={1.75} />
             </span>
-            <p className="mt-4 font-display text-cat text-guest-ink">Karte in Arbeit</p>
-            <p className="mt-2 max-w-[280px] text-body text-guest-muted">
-              Diese Speisekarte wird gerade zusammengestellt und ist gleich für Sie da.
-            </p>
+            <p className="mt-4 font-display text-cat text-guest-ink">{t.emptyTitle}</p>
+            <p className="mt-2 max-w-[280px] text-body text-guest-muted">{t.emptyText}</p>
           </div>
         ) : (
           visibleCategories.map((category, categoryIndex) => {
@@ -142,6 +160,7 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
                       archetype={archetype}
                       onAllergenClick={openLegend}
                       priority={categoryIndex === 0 && itemIndex < 2}
+                      strings={t}
                     />
                   ))}
                 </div>
@@ -157,12 +176,15 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
         onOpenLegend={openLegend}
         hasAllergens={hasAllergens}
         hasFeatured={categories.some((c) => c.items.some((i) => i.featured && i.available))}
+        strings={t}
+        translated={language !== SOURCE_LANGUAGE}
       />
 
       <AllergenLegend
         open={legendOpen}
         onClose={() => setLegendOpen(false)}
         allergens={allergenLegend}
+        strings={t}
       />
     </>
   );
@@ -170,6 +192,7 @@ export function MenuView({ menu, embedded = false }: { menu: PublicMenu; embedde
   return (
     <div
       data-guest-root
+      lang={languageInfo(language).htmlLang}
       data-guest-theme={themeAttribute(restaurant.menuTheme)}
       data-guest-font-size={restaurant.fontSize}
       style={

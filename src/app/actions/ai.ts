@@ -8,6 +8,7 @@ import { requireDefaultMenu, requireManager } from "@/lib/tenant";
 import { extractMenuFromFile, type ImportResult } from "@/lib/ai-import";
 import { suggestTheme, type ThemeSuggestion } from "@/lib/ai-theme";
 import { parsePrice } from "@/lib/money";
+import { scheduleTranslation } from "@/lib/translation";
 
 /**
  * Reads an uploaded menu and returns the result for review. Deliberately does
@@ -116,6 +117,7 @@ export async function commitImportAction(
     }
 
     revalidatePath("/admin", "layout");
+    scheduleTranslation(restaurant.id);
     return ok(
       { categories: parsed.data.categories.length, items: itemCount },
       `${itemCount} Gerichte übernommen — sie sind noch ausgeblendet.`

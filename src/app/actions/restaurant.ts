@@ -11,6 +11,7 @@ import { FONT_PAIR_KEYS } from "@/lib/fonts";
 import { THEME_KEYS, type ThemeKey } from "@/lib/themes";
 import { normalizeHex } from "@/lib/color";
 import { Prisma } from "@prisma/client";
+import { scheduleTranslation } from "@/lib/translation";
 
 function revalidateAll(slug: string) {
   revalidatePath("/admin", "layout");
@@ -53,6 +54,8 @@ export async function updateRestaurantAction(
     await prisma.restaurant.update({ where: { id: restaurant.id }, data: parsed.data });
 
     revalidateAll(restaurant.slug);
+    // The tagline is the one restaurant field guests see translated.
+    if (parsed.data.description !== restaurant.description) scheduleTranslation(restaurant.id);
     if (parsed.data.slug !== restaurant.slug) revalidatePath(`/menu/${parsed.data.slug}`);
 
     return ok(
