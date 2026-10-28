@@ -1,0 +1,117 @@
+/* ScaleMenu – Produkt-Tokens (Startseite, später Admin)
+ * Regeln und Begründung: design/DESIGN.md.
+ * Gleiches System wie ScaleBooked, nur die Signalfarbe ist eine andere.
+ * Die Gastkarte nutzt diese Tokens NIE – sie gehört dem Wirt (theme.css).
+ */
+
+@theme {
+  /* --- TINTE: Zink-Grau, keine Wärme, kein Blau --- */
+  --color-ink: #0b0b0c; /* Überschriften, Hauptknopf */
+  --color-ink-hover: #27272a;
+  --color-ink-2: #52525b; /* Fließtext, 7.7:1 auf paper */
+  --color-ink-3: #71717a; /* leiser Text, 4.8:1 */
+  --color-ink-4: #8b8b93; /* 3.4:1 – nur große Schrift: zweite Headline-Zeile */
+  --color-ink-5: #a1a1aa; /* nur Deko, Klammern der Wortmarke, nie Text */
+
+  /* --- FLÄCHEN --- */
+  --color-paper: #ffffff;
+  --color-canvas: #fafafa; /* Bühne, graue Sektion */
+  --color-sand: #f4f4f5; /* Hover, Segmente, Icon-Kreise */
+  --color-sand-deep: #e9e9ec;
+
+  /* --- LINIEN --- */
+  --color-line: #e4e4e7;
+  --color-line-soft: #efeff1;
+  --color-line-strong: #d4d4d8;
+
+  /* --- SIGNAL: genau eine Farbe, genau eine Bedeutung: live / online.
+     #9b1c31 hat 8.1:1 auf Weiß – ein Wert für Punkt und Text. --- */
+  --color-signal: #9b1c31;
+  --color-signal-tint: #f8edef;
+  --color-signal-line: #ebcdd2;
+  --color-signal-on-ink: #e8899a; /* 7.9:1 auf ink */
+
+  /* --- AUF SCHWARZ (Footer, schwarze Karte) --- */
+  --color-on-ink: #fafafa;
+  --color-on-ink-2: #a1a1aa;
+  --color-on-ink-3: #8b8b93;
+  --color-on-ink-line: #27272a;
+
+  /* --- TYPO: eine Schrift, Überschriften 500 und eng --- */
+  --text-display: clamp(2.25rem, 9.4vw, 4.5rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.04em;
+  --text-display--font-weight: 500;
+  --text-h2: clamp(1.875rem, 7.2vw, 3rem);
+  --text-h2--line-height: 1.08;
+  --text-h2--letter-spacing: -0.04em;
+  --text-h2--font-weight: 500;
+  --text-h3: 1.0625rem;
+  --text-h3--line-height: 1.45;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h3--font-weight: 500;
+  --text-lead: clamp(1.0625rem, 3.8vw, 1.1875rem);
+  --text-lead--line-height: 1.6;
+
+  /* --- RADIEN: Knöpfe sind Pillen (rounded-full) --- */
+  --radius-field: 10px;
+  --radius-tile: 14px;
+  --radius-card: 20px;
+  --radius-stage: 28px;
+
+  /* --- SCHATTEN: immer zuerst die 1-px-Kante, dann ein weicher Fall.
+     Nie farbig, nie Glow. --- */
+  --shadow-edge: 0 0 0 1px rgb(11 11 12 / 0.06), 0 1px 2px rgb(11 11 12 / 0.05);
+  --shadow-card:
+    0 0 0 1px rgb(11 11 12 / 0.06), 0 1px 2px rgb(11 11 12 / 0.04),
+    0 12px 32px -16px rgb(11 11 12 / 0.14);
+  --shadow-float:
+    0 0 0 1px rgb(11 11 12 / 0.05), 0 2px 4px rgb(11 11 12 / 0.04),
+    0 24px 48px -20px rgb(11 11 12 / 0.22);
+  --shadow-button: inset 0 1px 0 rgb(255 255 255 / 0.14), 0 1px 2px rgb(11 11 12 / 0.2);
+}
+
+/* Schriften referenzieren statt einbacken: die Variablen setzt next/font auf
+   dem Wrapper (src/lib/brand-font.ts), nicht auf :root. */
+@theme inline {
+  --font-grotesk: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-mark: var(--font-spacegrotesk), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Punktraster der Bühne. Ein Muster, kein Farbverlauf. */
+@utility bg-dotgrid {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(circle, var(--color-line-strong) 1px, transparent 1.25px);
+  background-size: 20px 20px;
+  background-position: 10px 10px;
+}
+
+@layer base {
+  /* Fokus in Tinte statt Admin-Indigo. */
+  [data-brand-root] {
+    --focus-ring: var(--color-ink);
+  }
+}
+
+/* Einzige Bewegung: ruhiges Einblenden beim Scrollen. Ohne JS, ohne Bewegung
+   für alle, die sie abgeschaltet haben. Der Hero hat kein data-reveal. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+      animation: brand-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+}
+
+@keyframes brand-reveal {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
